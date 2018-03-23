@@ -1,0 +1,560 @@
+//Thoth Gunter
+
+//ToDo:
+//div
+//image path 
+//=======Move to Slide Show ================
+//latex strings
+//headers, bullets, newline <= for new line we might not need to do any thing, but we must remove
+//\n and \t s.
+
+
+#![allow(dead_code)]
+
+struct ParserCursor{
+    file_string: String,
+    col: usize,
+    row: usize,
+    pos: usize, 
+    prev_col: usize,
+    prev_row: usize,
+    prev_pos: usize, 
+}
+
+impl ParserCursor{
+    fn new()->ParserCursor{
+        ParserCursor{
+            file_string: String::from(""),
+            col: 0,
+            row: 0,
+            pos: 0,
+            prev_col: 0,
+            prev_row: 0,
+            prev_pos: 0,
+        }
+    }
+
+
+    //I SHOULD NOT BE REMAKEING THESE COLLECTIONS EVERY TIME WANT THE NEXT OR CURRENT CHARACTER
+    fn peek(&self)->Option<char>{
+        let arr_char: Vec<char> = self.file_string.chars().collect();
+        if self.pos + 1 < arr_char.len(){
+            Some(arr_char[self.pos + 1])
+        }
+        else{
+            println!("Ran out of space to peek");
+            None
+        }
+    }
+
+    fn current(&mut self)->Option<char>{
+        let arr_char: Vec<char> = self.file_string.chars().collect();
+        if self.pos < arr_char.len(){
+            Some(arr_char[self.pos])
+        }
+        else{
+            println!("Ran out of space to current");
+            None
+        }
+    }
+
+    fn next(&mut self)->Option<char>{
+        let arr_char: Vec<char> = self.file_string.chars().collect();
+        self.prev_col = self.col;
+        self.prev_row = self.row;
+        self.prev_pos = self.pos;
+        if self.pos + 1 < arr_char.len(){
+            self.pos += 1;
+            if arr_char[self.pos] == '\n'{
+                self.row += 1;
+            }
+            else{
+                self.col += 1;
+            }
+            Some(arr_char[self.pos])
+        }
+        else{
+            None
+        }
+    }
+
+    fn previous(&mut self){
+        self.col = self.prev_col;
+        self.row = self.prev_row;
+        self.pos = self.prev_pos;
+    }
+
+    fn croak(&self, msg: &str){
+        println!("{} pos:{}, row:{}, col:{}", msg, self.pos, self.row, self.col);
+    }
+
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum LexType{
+    Punc,
+    Num,
+    Str,
+    Kw,
+    Var,
+    Op,
+    Id,
+    Arr,
+    SlideStr,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum ValueType{
+    Num(f64),
+    Str(String),
+    Arr(Vec<ValueType>),
+    Err,
+}
+
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum ConfigKwds{
+    width,
+    height,
+    background_color,
+    font,
+    text,
+    default,
+}
+
+
+#[derive(Debug, PartialEq)]
+pub struct ConfigCard{
+    pub config_data: Vec<ConfigData>,
+}
+#[derive(Debug, PartialEq)]
+pub struct ConfigData{
+    pub kwd: ConfigKwds,
+    pub data: ValueType,
+}
+
+
+#[derive(Debug, PartialEq)]
+pub struct SlideData{
+    pub config: Option<ConfigCard>,
+    pub kwd: ConfigKwds,
+    pub data: ValueType,
+}
+#[derive(Debug, PartialEq)]
+pub struct SlideCard{
+    pub config: Option<ConfigCard>,
+    pub slide_data: Vec<SlideData>,
+}
+
+
+#[derive(Debug, PartialEq)]
+pub enum Card{
+    SlideCard(SlideCard),
+    ConfigCard(ConfigCard),
+    Default,
+}
+
+
+
+static ACC_PUNC: [char; 7]  =  ['{', '}', '(', ')', '.', ',', ';'];
+static ACC_NUM:  [char; 10] =  ['0','1','2','3','4','5','6','7','8','9'];
+static ACC_OP:   [&str; 5]  =  ["=","+", "-", "/", "*"];
+static ACC_STR:  [char; 1]  =  ['"'];
+static ACC_ID:   [char; 1]  =  ['#'];
+
+static WHITE_SPACE:[char; 3] = [' ','\t', '\n'];
+
+fn parse_error(message: &str, parser_cursor: &ParserCursor){
+    println!("Error: {}  pos:{} row:{}", message, parser_cursor.pos, parser_cursor.row);
+}
+
+fn is_keyword(parser_cursor: &mut ParserCursor, keyword: &str, reset_pos: bool)->bool{
+    let mut _is_keyword = true;
+    let pos = parser_cursor.pos;
+    let row = parser_cursor.row;
+    let col = parser_cursor.col;
+    let previous_pos = parser_cursor.prev_pos;
+    let previous_row = parser_cursor.prev_row;
+    let previous_col = parser_cursor.prev_col;
+
+    for conf_character in keyword.chars(){
+        if conf_character != parser_cursor.current().unwrap(){
+            _is_keyword = false;
+            break;
+        }
+        parser_cursor.next();
+    }
+
+    if reset_pos == true{
+        parser_cursor.pos = pos;
+        parser_cursor.row = row;
+        parser_cursor.col = col;
+        parser_cursor.prev_pos = previous_pos;
+        parser_cursor.prev_row = previous_row;
+        parser_cursor.prev_col = previous_col;
+    }
+    _is_keyword
+}
+
+
+
+fn is_slide(parser_cursor: &mut ParserCursor)->bool{
+    is_keyword(parser_cursor, "#slide", true)
+}
+
+fn is_config(parser_cursor: &mut ParserCursor)->bool{
+    is_keyword(parser_cursor, "#config", true)
+}
+
+
+
+
+fn font_func(parser_cursor: &mut ParserCursor)->SlideData{
+    println!("Font function");
+    let config = gen_config_func(parser_cursor, 
+                                 &[("font", ConfigKwds::font, LexType::Str)],
+                                 "#font");
+    parser_cursor.next();
+    let slide_data = gather_value(parser_cursor, LexType::SlideStr);
+    let data = SlideData{config: Some(config),
+                         kwd: ConfigKwds::text,
+                         data: slide_data};
+    data
+}
+
+//Work in progress
+fn div_func(parser_cursor: &mut ParserCursor)->SlideData{
+    println!("Div function");
+    
+    let config = gen_config_func(parser_cursor, 
+                                 &[("font", ConfigKwds::font, LexType::Str)],
+                                 "#div");
+    parser_cursor.next();
+    let slide_data = gather_value(parser_cursor, LexType::SlideStr);
+    let data = SlideData{config: Some(config),
+                         kwd: ConfigKwds::text,
+                         data: slide_data};
+    data
+}
+
+fn slide_config(parser_cursor: &mut ParserCursor)->ConfigCard{
+    println!("Slide config func");
+    gen_config_func(parser_cursor, &[("background_color", ConfigKwds::background_color, LexType::Arr)], "#slide")
+}
+fn slide_func(parser_cursor: &mut ParserCursor)->Card{
+    println!("Slide func");
+    let mut card = SlideCard{config:None, slide_data:Vec::new()};
+    let mut init = false;
+    
+    loop{
+        let current_char = parser_cursor.current().unwrap();
+        if current_char == '#'{
+            if is_keyword(parser_cursor, "#slide", true){
+                if init == true{
+                    println!("New slide");
+                    parser_cursor.previous();
+                    break;
+                }
+                if init == false{
+                    init = true;
+
+                    if is_keyword(parser_cursor, "#slide(", true) {
+                        card.config = Some(slide_config(parser_cursor));
+                        parser_cursor.next();
+                    }
+                    else{is_keyword(parser_cursor, "#slide", false);}
+
+                }
+            }
+        }
+        if init == true{
+            if is_keyword(parser_cursor, "#font(", true) {
+                card.slide_data.push(font_func(parser_cursor));
+            }
+            else {
+                card.slide_data.push( SlideData{ config: None, kwd: ConfigKwds::text, data: gather_value(parser_cursor, LexType::SlideStr) }); 
+            }
+        }
+        if parser_cursor.next() == None { break; }
+    }
+    Card::SlideCard(card)
+}
+
+fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType)->ValueType{
+    match expected_type{
+        LexType::Num => {
+            let mut value = String::from("");
+            loop{
+                for white_space in WHITE_SPACE.iter(){
+                    if parser_cursor.current().unwrap() == *white_space{
+                        parser_cursor.next();
+                    }
+                }
+                if parser_cursor.current().unwrap() == ',' || parser_cursor.current().unwrap() == ')' || parser_cursor.current().unwrap() == '}' || parser_cursor.current().unwrap() == ']'{
+                    parser_cursor.previous();
+                   break;
+                }
+                else{
+                    let mut good_number = false;
+                    for num_char in ACC_NUM.iter(){
+                        if parser_cursor.current().unwrap() == *num_char && good_number == false { good_number = true; }
+                    }
+                    if good_number == true { value.push(parser_cursor.current().unwrap()); }
+                    else {
+                        println!("Unexpected character: {}. Function gather_value line {}", parser_cursor.current().unwrap(), line!());
+                        break;
+                    }
+                    parser_cursor.next();
+                }
+            }
+            if value == "" { return ValueType::Err; }
+            ValueType::Num(value.parse::<f64>().unwrap())
+        },
+        LexType::Arr => {
+            let mut arr = Vec::<ValueType>::new();
+            let mut value = String::from("");
+            let mut init = false;
+            loop{
+                for white_space in WHITE_SPACE.iter(){
+                    if parser_cursor.current().unwrap() == *white_space{
+                        parser_cursor.next();
+                    }
+                }
+                if parser_cursor.current().unwrap() == ')' || parser_cursor.current().unwrap() == '}' || parser_cursor.current().unwrap() == ']'{
+                   break;
+                }
+                else{
+                    if parser_cursor.current().unwrap() == ','{
+                        parser_cursor.next();
+                        continue;
+                    }
+                    if init == false{
+                        if parser_cursor.current().unwrap() == '[' { init = true; } 
+                    }
+                    else{
+                        let value = gather_value(parser_cursor, LexType::Num);
+                        arr.push(value);
+                    }
+                    parser_cursor.next();
+                }
+            }
+            println!("arr => {:?}", arr);
+            ValueType::Arr(arr)
+            //ValueType::Err 
+        },
+        LexType::Str => {
+            let mut value = String::from("");
+            let mut init = false;
+            loop{
+                if init == false {
+                    if parser_cursor.current().unwrap() == '\"'{
+                        init = true;
+                    }
+                parser_cursor.next();
+                }
+                else{
+                    if parser_cursor.current().unwrap() == '\"'{ break; }
+                    value.push(parser_cursor.current().unwrap());
+                    parser_cursor.next();
+                }
+            }
+            ValueType::Str(value)
+        }
+        LexType::SlideStr => { 
+            let mut value = String::from("");
+            loop{
+                if parser_cursor.current().unwrap() == '\n'{ 
+                    if parser_cursor.peek().unwrap() == '\n'{ break; }
+                    if parser_cursor.peek().unwrap() == '#'{ break; }
+                    if parser_cursor.next() == None { break; };
+                    value.push(' ');
+                    continue; 
+                }
+                value.push(parser_cursor.current().unwrap());
+                if parser_cursor.next() == None {break; };
+            }
+            ValueType::Str(value)
+        },
+        _ => ValueType::Err
+    } 
+}
+
+fn config_func(parser_cursor: &mut ParserCursor)->Card{
+    use self::LexType::*;
+    let card = gen_config_func(parser_cursor,
+                     &[("width", ConfigKwds::width, Num),
+                       ("height", ConfigKwds::height, Num),
+                       ("background_color", ConfigKwds::background_color, Arr),
+                       ("font", ConfigKwds::font, Str) ],
+                     "#config");
+    Card::ConfigCard(card)
+}
+
+fn gen_config_func(parser_cursor: &mut ParserCursor, config_keywords: &[(&str, ConfigKwds, LexType)], keyword: &str)->ConfigCard{
+    use self::LexType::*;
+    println!("General Config func");
+    let mut card = ConfigCard{config_data: Vec::new()};
+
+    is_keyword(parser_cursor, keyword, false);
+    if parser_cursor.current().unwrap() != '('{
+        parse_error(&format!("expected ( for {:?}", parser_cursor.current()), parser_cursor);
+        return card;
+    }
+    else{parser_cursor.next();}
+
+    let mut keyword_primed = false;
+    let mut value = Num;
+    let mut kwd = ConfigKwds::default;
+    loop{
+        if parser_cursor.current().unwrap() == ')'{break;} 
+        if WHITE_SPACE.contains(&parser_cursor.current().unwrap()){
+            parser_cursor.next();
+            continue;
+        } 
+        if keyword_primed == false{
+            for keyword_value in config_keywords.iter(){
+                let keyword = keyword_value.0;
+                if is_keyword(parser_cursor, keyword, false){
+                    keyword_primed = true;
+                    
+                    value = keyword_value.2;
+                    kwd = keyword_value.1;
+
+                    println!("Is a Keyword: {:?} {:?}", keyword, value);
+                    
+                    card.config_data.push(ConfigData{kwd: keyword_value.1, data: ValueType::Err} );
+                    parser_cursor.previous();
+                    break;
+                }
+            }
+        }
+        else{
+            let index = card.config_data.len() - 1; 
+            if parser_cursor.current().unwrap() != '='{
+                println!("Err {:?}", parser_cursor.current());
+                card.config_data[index] = ConfigData{ kwd: kwd, data: ValueType::Err};
+                keyword_primed = false;
+            } 
+            else{
+                parser_cursor.next(); 
+                let gathered_value = gather_value(parser_cursor, value);
+
+                println!("Keyword: {:?}", value);
+                println!("{:?}", gathered_value);
+
+                card.config_data[index] = ConfigData{ kwd: kwd, data: gathered_value};
+                keyword_primed =  false;
+            }
+        }
+        parser_cursor.next();
+    }
+    card
+}
+
+
+fn read_contents(parser_cursor: &mut ParserCursor)->Card{
+    //Is Looped until the end of file
+    //if #slide do slide stuff
+    //if #config do config stuff
+    //else warning
+    //words, look out for other ID funcs 
+    let mut card = Card::Default;
+    let current_char = parser_cursor.current().unwrap();
+    if ACC_ID.contains(&current_char){ 
+        if is_slide(parser_cursor) { card = slide_func(parser_cursor); }
+        if is_config(parser_cursor){ card = config_func(parser_cursor); } 
+    }
+    return card;
+}
+
+pub fn example()->Vec<Card>{
+    let mut parser_cursor = ParserCursor::new();
+    parser_cursor.file_string = remove_comments(String::from(
+
+"
+//Thoth Gunter
+//Rust style comments
+
+
+#config(
+width = 1600,
+height = 1080,
+background_color = [100,0,100], //array style
+font = \"Times\"
+extern= \"/path\"
+)
+
+
+#slide
+We can write a slide like this. 
+No need for a bracketted structure.
+
+We can create a paragraph with consecutive \\n\\n.
+We can create a new line with #newline
+
+
+#slide(background_color= [0,160,0])
+We can also change slide configurations for specific slides
+
+#slide
+#font( font=\"Times\") We got a different font
+
+Headers are nice
+
+#slide
+#h1 We need to think about headers this is syntactic sugar
+-Bullets
+-And bullet points
+--And double bullets
+##"
+
+    ));
+    let mut chars = Vec::<char>::new();
+    let mut document_structure = Vec::<Card>::new();
+    loop{
+        
+        {
+            let card = read_contents(&mut parser_cursor);
+            if card != Card::Default{
+              document_structure.push(card); 
+            }
+            match parser_cursor.next(){
+                Some(c) => {chars.push(c);},
+                None => {break;}
+            }
+        }
+        if parser_cursor.peek() == None{break;} 
+    }
+    println!("{}", parser_cursor.file_string);
+    for card in document_structure.iter(){
+        println!("{:?}", card);
+        println!("");
+    }
+    document_structure
+}
+
+
+fn remove_comments(contents: String)->String{
+    let mut clean_contents = String::new();
+    for line in contents.split('\n'){
+
+        clean_contents += "\n";
+        let mut length = line.len();
+        if line == "" {
+            continue;    
+        }
+        if line.contains("//"){
+            if line.starts_with("//"){
+                continue
+            }
+            else{
+                match line.find("//"){
+                    None=> {},
+                    Some(l)=> length = l,
+                };
+            }
+        }
+        clean_contents += &line[0..length]; 
+    }
+    clean_contents
+}

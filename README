@@ -1,0 +1,25 @@
+ToDo:
+
++figure out the best way to work with pdf library, do we want lots of layers?(Background layer, text layer, image layer)
++text aligments, and associated functions.
++integrate latex tables and mathmatics rendering
++bullet points character code
++test footers and headers
++integrate parser
+
+
+
+
+
+
+I need a struct which remembers the settings of the document / page in general,  that might just be the cards
+
+
+MINIMAL VIABLE PRODUCT:
+Good default slide style=> good standard placement of text, headers and images.  Page numbers
+fonts: style, color, size
+images: path-to-image, resize, place
+bullet points
+render tables, maths
+Divs ?How will we handle \n\t ?
+Headers, text, ~code~
