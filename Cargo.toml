@@ -5,3 +5,4 @@ authors = ["TKGgunter <thothgunter@live.com>"]
 
 [dependencies]
 printpdf = "*"
+freetype-rs = "0.16.0"
