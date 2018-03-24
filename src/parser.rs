@@ -503,7 +503,7 @@ height = 190.5,
 background_color = [100,0,100], //array style
 font = \"Times\"
 font_color = [200, 200, 200],
-align = \"right\"
+align = \"center\"
 extern= \"/path\"
 )
 
@@ -520,9 +520,21 @@ We can create a new line with #newline
 We can also change slide configurations for specific slides
 
 #slide
-#font( font=\"Times\") We got a different font
+#font(font=\"Times\", size=32, style=\"bold\") We got a different font
+#font(pos_x= 0.7, pos_y= 0.1) Place text where you want
 
-Headers are nice
+#slide
+#font(font=\"Times\", size=32, style=\"bold\"){
+What if we have many blocks of text with the same font.
+
+Well we got you covered.
+}
+
+
+#slide
+We can even add images
+#image(path=\"/some/path\")
+#image(path=\"/some/path\", pos_x=0.7, pos_y=0.1, width=0.8, hieght=0.8)
 
 #slide
 #h1 We need to think about headers this is syntactic sugar

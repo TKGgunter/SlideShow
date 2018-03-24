@@ -77,13 +77,89 @@ fn render_right_aligned_text( current_layer: &PdfLayerReference, text: &String, 
 }
 
 
+
+
+
+
+
+fn set_settings( card: &ConfigCard, 
+                 dimensions: &mut (f64, f64), 
+                 background_color: &mut [f64;3],
+                 font_color: &mut [f64;3],
+                 alignment: &mut Align,
+                 ){
+
+    for config_data in card.config_data.iter(){
+        if config_data.kwd == ConfigKwds::background_color{
+            
+            let mut temp_array = Vec::new();
+            if let ValueType::Arr(ref array) = config_data.data{
+                for (it, element) in array.iter().enumerate(){
+                    if let &ValueType::Num(ref number) = element{
+                        temp_array.push(number + 0.0);
+                    }
+                    else{
+                        println!("Unexpected Value type in Configuration");
+                    }
+                }
+            }
+            else{
+                println!("Unexpected Value type in Configuration");
+            }
+
+            if temp_array.len() == 3{
+                background_color[0] = temp_array[0];
+                background_color[1] = temp_array[1];
+                background_color[2] = temp_array[2];
+            }
+        } 
+        else if config_data.kwd == ConfigKwds::font_color{
+            
+            let mut temp_array = Vec::new();
+            if let ValueType::Arr(ref array) = config_data.data{
+                for (it, element) in array.iter().enumerate(){
+                    if let &ValueType::Num(ref number) = element{
+                        temp_array.push(number + 0.0);
+                    }
+                    else{
+                        println!("Unexpected Value type in Configuration");
+                    }
+                }
+            }
+            else{
+                println!("Unexpected Value type in Configuration");
+            }
+
+            if temp_array.len() == 3{
+                font_color[0] = temp_array[0];
+                font_color[1] = temp_array[1];
+                font_color[2] = temp_array[2];
+            }
+        } 
+        else if config_data.kwd == ConfigKwds::align{
+            if let ValueType::Str(ref s) = config_data.data{
+                if s.to_lowercase()      == "right"{    alignment.data = Alignment::right;}
+                else if s.to_lowercase() == "left"{     alignment.data = Alignment::left;}
+                else if s.to_lowercase() == "center"{   alignment.data = Alignment::center;}
+            };
+        }
+    }
+}
+
+
+
+
+
+
 #[derive(PartialEq)]
 enum Alignment{
     right,
     left,
     center,
+    default,
 }
-
+#[derive(PartialEq)]
+struct Align{ data: Alignment}
 
 //Need to take care of \n
 fn main() {
@@ -99,7 +175,12 @@ fn main() {
     let mut default_slide_color = [256.0, 256.0, 256.0];
     let mut default_font_color = [0.0, 0.0, 0.0];
     let mut default_font_size = 16; 
-    let mut default_alignment = Alignment::right; 
+    let mut default_alignment = Align{data: Alignment::right}; 
+
+    let mut some_slide_color : Option<[f64; 3]> = None;
+    let mut some_font_color  : Option<[f64; 3]> = None;
+    let mut some_font_size   : Option<f64> = None;
+    let mut some_alignment   : Option<Alignment>= None;
     
     let text1 = "Testing string one";
     //test image
@@ -137,70 +218,32 @@ fn main() {
             add_new_slide = false;
             println!("{:?}", card);
 
-            for config_data in card.config_data.iter(){
-                if config_data.kwd == ConfigKwds::background_color{
-                    
-                    let mut temp_array = Vec::new();
-                    if let ValueType::Arr(ref array) = config_data.data{
-                        for (it, element) in array.iter().enumerate(){
-                            if let &ValueType::Num(ref number) = element{
-                                temp_array.push(number + 0.0);
-                            }
-                            else{
-                                println!("Unexpected Value type in Configuration");
-                            }
-                        }
-                    }
-                    else{
-                        println!("Unexpected Value type in Configuration");
-                    }
-
-                    println!("Background color was {:?}", default_slide_color);
-                    if temp_array.len() == 3{
-                        default_slide_color[0] = temp_array[0];
-                        default_slide_color[1] = temp_array[1];
-                        default_slide_color[2] = temp_array[2];
-                    }
-                    println!("Now it is {:?}", default_slide_color);
-                } 
-                else if config_data.kwd == ConfigKwds::font_color{
-                    
-                    let mut temp_array = Vec::new();
-                    if let ValueType::Arr(ref array) = config_data.data{
-                        for (it, element) in array.iter().enumerate(){
-                            if let &ValueType::Num(ref number) = element{
-                                temp_array.push(number + 0.0);
-                            }
-                            else{
-                                println!("Unexpected Value type in Configuration");
-                            }
-                        }
-                    }
-                    else{
-                        println!("Unexpected Value type in Configuration");
-                    }
-
-                    println!("Background font color was {:?}", default_font_color);
-                    if temp_array.len() == 3{
-                        default_font_color[0] = temp_array[0];
-                        default_font_color[1] = temp_array[1];
-                        default_font_color[2] = temp_array[2];
-                    }
-                    println!("Now font is {:?}", default_font_color);
-                } 
-                else if config_data.kwd == ConfigKwds::align{
-                    if let ValueType::Str(ref s) = config_data.data{
-                        if s.to_lowercase() == "right"{default_alignment = Alignment::right;}
-                        else if s.to_lowercase() == "left"{default_alignment = Alignment::left;}
-                        else if s.to_lowercase() == "center"{default_alignment = Alignment::center;}
-                    };
-                }
-            }
+            set_settings(card, &mut dimensions, &mut default_slide_color,
+                         &mut default_font_color, &mut default_alignment);
         };
 
         let mut string_arr = Vec::<String>::new();
         if let Card::SlideCard(ref slide) = document[i]{
             add_new_slide = true;
+
+
+            if let Some(ref config) = slide.config {
+
+                let mut temp_dimensions = (-1.0, -1.0);
+                let mut temp_slide_color = [-1.0, -1.0, -1.0];
+                let mut temp_font_color = [-1.0, -1.0, -1.0];
+                let mut temp_font_size = -1; 
+                let mut temp_alignment = Align{data: Alignment::right}; 
+
+                set_settings(config, &mut temp_dimensions,
+                             &mut temp_slide_color,
+                             &mut temp_font_color,
+                             &mut temp_alignment);
+                if temp_slide_color[0] != -1.0{
+                    some_slide_color = Some(temp_slide_color);
+                }
+            };  
+
             for element in slide.slide_data.iter(){
                 if let ValueType::Str(ref string) = element.data{
                     if calc_text_width_pt(&string.to_string(), default_font_size, &ft_default_face) * PT_MM <  dimensions.0{
@@ -242,8 +285,16 @@ fn main() {
 
         let line1 = Line{points: points, is_closed: true, has_fill: true, has_stroke: true, };
         let mut fill_color = Color::Rgb(Rgb::new(default_slide_color[0] / 256.0,
-                                         default_slide_color[1] / 256.0,
-                                         default_slide_color[2] / 256.0, None));
+                                                 default_slide_color[1] / 256.0,
+                                                 default_slide_color[2] / 256.0, None));
+        if let Some(color) = some_slide_color {
+            fill_color = Color::Rgb(Rgb::new(color[0] / 256.0,
+                                             color[1] / 256.0,
+                                             color[2] / 256.0, None));
+        }
+        some_slide_color = None;
+
+
         current_layer.set_fill_color(fill_color);
         current_layer.add_shape(line1);
         ////////////////////////////////////////////////
@@ -257,13 +308,13 @@ fn main() {
 
 
             //Render default text
-            if default_alignment == Alignment::left{
+            if default_alignment.data == Alignment::left{
                 current_layer.use_text(string_ele.to_string(), default_font_size, 20.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &font);
             }
-            else if default_alignment == Alignment::right{
+            else if default_alignment.data == Alignment::right{
                 render_right_aligned_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &ft_default_face, &font);
             }
-            else{
+            else if default_alignment.data == Alignment::center{
                 render_centered_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &ft_default_face, &font);
             }
 

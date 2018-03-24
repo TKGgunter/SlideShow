@@ -1,7 +1,7 @@
 ToDo:
 +add font (size, style, color, position, align) to parser
 +add images
-+integrate latex tables and mathmatics rendering
++integrate latex tables and mathmatics rendering from an external python script
 +div
 +take outside files
 +clean up console output
