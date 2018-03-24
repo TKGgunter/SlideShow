@@ -4,4 +4,5 @@ version = "0.1.0"
 authors = ["TKGgunter <thothgunter@live.com>"]
 
 [dependencies]
-printpdf = "=0.2.0"
+printpdf = "*"
+freetype-rs = "0.16.0"
