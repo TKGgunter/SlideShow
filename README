@@ -1,24 +1,25 @@
 ToDo:
 +add right, left, center align to slide render
-+add font (size, style colors, position) to parser
-+add header to parser
-+bullets
++add font (size, style, color, position, align) to parser
 +add images
 +integrate latex tables and mathmatics rendering
 +div
++take outside files
++clean up console output
++errors statements
++add header to parser
++bullets
 +newline
++new paragraph vs newline <= Mar 24 they are the same
 
+
+
+Things to think about
 +figure out the best way to work with pdf library, do we want lots of layers?(Background layer, text layer, image layer)
-+text aligments, and associated functions.
 +bullet points character code
 +test footers and headers
 
 
-
-
-
-
-I need a struct which remembers the settings of the document / page in general,  that might just be the cards
 
 
 MINIMAL VIABLE PRODUCT:

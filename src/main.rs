@@ -19,12 +19,12 @@ use parser::{Card, ConfigCard, SlideCard, ConfigKwds, ValueType, example};
 /// - font_face: The font-face of the text
 /// From printpdf author 
 
-
+static PT_MM : f64 = 0.352778;
 pub fn calc_lower_left_for_centered_text(text: &String, font_scale: i64, parent_width: f64, font_face: &freetype::Face)
 -> f64
 {
     let s_w = calc_text_width_pt(text, font_scale, font_face);
-    ((mm_to_pt!(parent_width) / 2.0) - (s_w / 2.0)) * 0.352778
+    ((mm_to_pt!(parent_width) / 2.0) - (s_w / 2.0)) * PT_MM
 }
 
 
@@ -172,13 +172,37 @@ fn main() {
             }
         };
 
-        let mut string_arr = Vec::<&str>::new();
+        let mut string_arr = Vec::<String>::new();
         if let Card::SlideCard(ref slide) = document[i]{
             add_new_slide = true;
             for element in slide.slide_data.iter(){
                 if let ValueType::Str(ref string) = element.data{
-                    string_arr.push(string);
+                    if calc_text_width_pt(&string.to_string(), default_font_size, &ft_default_face) * PT_MM <  dimensions.0{
+                        string_arr.push(string.to_string());
+                    }
+                    else{
+                        //Needed for text wrapping
+                        let mut temp_string = String::from("");
+                        let mut string_iter = string.split_whitespace().peekable();
+                        loop{
+                            match string_iter.next() {
+                                Some(string_ele)=>{
+                                    temp_string.push_str(&format!("{} ",string_ele));
+                                },
+                                None => {
+                                    string_arr.push(temp_string);
+                                    break;}
+                            }
+                            if let Some(string_peek) = string_iter.peek() { 
+                                if calc_text_width_pt(&format!("{} {}", temp_string, string_peek), default_font_size, &ft_default_face) * PT_MM >  dimensions.0{
+                                    string_arr.push(temp_string);
+                                    temp_string = String::new();
+                                }
+                            };
+                        }
+                    }
                 }
+                println!("text width {} {:?}", calc_text_width_pt(&string_arr[string_arr.len() - 1].to_string(), 16, &ft_default_face) * PT_MM, dimensions.0);
             }
         };
         println!("{:?}", string_arr);
@@ -204,8 +228,8 @@ fn main() {
                                              default_font_color[1] / 256.0,
                                              default_font_color[2] / 256.0, None));
             current_layer.set_fill_color(fill_color);
-            //current_layer.use_text(string_ele.to_string(), default_font_size, 20.0, 168.0 - (it as f64 * 0.02 * 25.4* 32.0), &font);
-            render_centered_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, 168.0 - (it as f64 * 0.02 * 25.4* 32.0), &ft_default_face, &font);
+            //current_layer.use_text(string_ele.to_string(), default_font_size, 20.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &font);
+            render_centered_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &ft_default_face, &font);
         }
         if add_new_slide{
             let (page_n, layer1) = doc.add_page(dimensions.0, dimensions.1,"Page 2, Layer 1");
