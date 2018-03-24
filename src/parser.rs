@@ -477,8 +477,8 @@ pub fn example()->Vec<Card>{
 
 
 #config(
-width = 1600,
-height = 1080,
+width = 254.0,
+height = 190.5,
 background_color = [100,0,100], //array style
 font = \"Times\"
 extern= \"/path\"

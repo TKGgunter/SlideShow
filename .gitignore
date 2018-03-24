@@ -1,4 +1,5 @@
 
 /assets/
 /target/
+**/*.pdf
 **/*.rs.bk

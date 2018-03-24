@@ -71,9 +71,9 @@ fn render_centered_text( current_layer: &PdfLayerReference, text: &String, font_
 fn main() {
     //DEFAULT SETINGS
     //16:9
-    let mut dimensions = (Mm(338.7), Mm(190.5));
-    //let default_font_data = File::open("/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf").unwrap();
-    let default_font_data = File::open("/home/gunter/Rust/Projects/SlideShow/assets/lmroman6-regular.otf").unwrap();
+    let mut dimensions = (338.7,190.5);
+    let default_font_data = File::open("/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf").unwrap();
+    //let default_font_data = File::open("/home/gunter/Rust/Projects/SlideShow/assets/lmroman6-regular.otf").unwrap();
     let mut default_slide_color = [256.0, 256.0, 256.0];
     let default_font_color = [0.0, 0.0, 0.0];
 
@@ -84,13 +84,34 @@ fn main() {
 
     let document = example();
 
+
+    if document.len() > 0{
+        if let Card::ConfigCard(ref card) = document[0]{
+            for config_data in card.config_data.iter(){
+                if config_data.kwd == ConfigKwds::width{
+                    if let ValueType::Num(ref num) = config_data.data{
+                        dimensions.0 = num + 0.0;
+                    }
+                }
+                else if config_data.kwd == ConfigKwds::height{
+                    if let ValueType::Num(ref num) = config_data.data{
+                        dimensions.1 = num + 0.0;
+                    }
+                }
+            }
+        }
+    }
+
     let (doc, page1, layer1) = PdfDocument::new("PDF_Document_title", dimensions.0, dimensions.1, "Layer 1");
     let font = doc.add_external_font(default_font_data).unwrap();
+    let mut current_layer = doc.get_page(page1).get_layer(layer1);
+    let mut add_new_slide = true;
 
     for i in 0..document.len(){
     
         if let Card::ConfigCard(ref card) = document[i] {
 
+            add_new_slide = false;
             println!("{:?}", card);
 
             for config_data in card.config_data.iter(){
@@ -122,41 +143,43 @@ fn main() {
             }
         };
 
+        let mut string_arr = Vec::<&str>::new();
+        if let Card::SlideCard(ref slide) = document[i]{
+            add_new_slide = true;
+            for element in slide.slide_data.iter(){
+                if let ValueType::Str(ref string) = element.data{
+                    string_arr.push(string);
+                }
+            }
+        };
+        println!("{:?}", string_arr);
+
+        ////////////////////////////////////////////////
+        //Background_color
+        let points = vec![(Point::new(dimensions.0, 0.0), false),
+                            (Point::new(0.0, 0.0), false),
+                            (Point::new(0.0, dimensions.1), false),
+                            (Point::new(dimensions.0, dimensions.1), false)];
+
+        let line1 = Line{points: points, is_closed: true, has_fill: true, has_stroke: true, };
+        let mut fill_color = Color::Rgb(Rgb::new(default_slide_color[0] / 256.0,
+                                         default_slide_color[1] / 256.0,
+                                         default_slide_color[2] / 256.0, None));
+        current_layer.set_fill_color(fill_color);
+        current_layer.add_shape(line1);
+        ////////////////////////////////////////////////
 
 
-        if i == 0{
-            let mut current_layer = doc.get_page(page1).get_layer(layer1);
-            let points = vec![(Point::new(dimensions.0, Mm(0.0)), false),
-                                (Point::new(Mm(0.0), Mm(0.0)), false),
-                                (Point::new(Mm(0.0), dimensions.1), false),
-                                (Point::new(dimensions.0, dimensions.1), false)];
-
-            let line1 = Line{points: points, is_closed: true, has_fill: true, has_stroke: true, is_clipping_path: false};
-            let mut fill_color = Color::Rgb(Rgb::new(default_slide_color[0] / 256.0,
-                                             default_slide_color[1] / 256.0,
-                                             default_slide_color[2] / 256.0, None));
-            current_layer.set_fill_color(fill_color);
-
-            current_layer.add_shape(line1);
-
+        for (it, string_ele) in string_arr.iter().enumerate(){
             fill_color = Color::Rgb(Rgb::new(default_font_color[0] / 256.0,
                                              default_font_color[1] / 256.0,
                                              default_font_color[2] / 256.0, None));
             current_layer.set_fill_color(fill_color);
-            current_layer.use_text(text1, 32, Mm(20.0), Mm(168.0), &font);
-
+            current_layer.use_text(string_ele.to_string(), 32, 20.0, 168.0 - (it as f64 * 0.02 * 25.4* 32.0), &font);
         }
-        else{
-            let (page2, layer1) = doc.add_page(dimensions.0, dimensions.1,"Page 2, Layer 1");
-            let mut current_layer = doc.get_page(page2).get_layer(layer1);
-            let points = vec![(Point::new(dimensions.0, Mm(0.0)), false),
-                                (Point::new(Mm(0.0), Mm(0.0)), false),
-                                (Point::new(Mm(0.0), dimensions.1), false),
-                                (Point::new(dimensions.0, dimensions.1), false)];
-            let line1 = Line{points: points, is_closed: true, has_fill: true, has_stroke: true, is_clipping_path: false};
-            let mut fill_color = Color::Rgb(Rgb::new(0.0, 0.2, 0.4, None));
-            current_layer.set_fill_color(fill_color);
-            current_layer.add_shape(line1);
+        if add_new_slide{
+            let (page_n, layer1) = doc.add_page(dimensions.0, dimensions.1,"Page 2, Layer 1");
+            current_layer = doc.get_page(page_n).get_layer(layer1);
         }
     }
     doc.save(&mut BufWriter::new(File::create("test_working.pdf").unwrap())).unwrap();
