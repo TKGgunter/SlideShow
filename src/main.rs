@@ -9,6 +9,8 @@ mod parser;
 use parser::{Card, ConfigCard, SlideCard, ConfigKwds, ValueType, example};
 
 
+
+static PT_MM : f64 = 0.352778;
 /// Calculates the lower left of a centered string, to position it correctly in the document
 /// 
 /// Parameters:
@@ -19,7 +21,6 @@ use parser::{Card, ConfigCard, SlideCard, ConfigKwds, ValueType, example};
 /// - font_face: The font-face of the text
 /// From printpdf author 
 
-static PT_MM : f64 = 0.352778;
 pub fn calc_lower_left_for_centered_text(text: &String, font_scale: i64, parent_width: f64, font_face: &freetype::Face)
 -> f64
 {
@@ -27,6 +28,12 @@ pub fn calc_lower_left_for_centered_text(text: &String, font_scale: i64, parent_
     ((mm_to_pt!(parent_width) / 2.0) - (s_w / 2.0)) * PT_MM
 }
 
+pub fn calc_lower_left_for_right_aligned_text(text: &String, font_scale: i64, parent_width: f64, font_face: &freetype::Face)
+-> f64
+{
+    let s_w = calc_text_width_pt(text, font_scale, font_face);
+    (mm_to_pt!(parent_width) - s_w ) * PT_MM
+}
 
 
 #[allow(unused_variables)]
@@ -62,9 +69,20 @@ fn render_centered_text( current_layer: &PdfLayerReference, text: &String, font_
 }
 
 
+fn render_right_aligned_text( current_layer: &PdfLayerReference, text: &String, font_scale: i64, canvas_width: f64, y_mm: f64, face: &freetype::Face, font: &IndirectFontRef){
+
+    let centered = calc_lower_left_for_right_aligned_text(text, font_scale, canvas_width, face);
+    current_layer.use_text(&text[..], font_scale, centered, y_mm, font);
+  
+}
 
 
-
+#[derive(PartialEq)]
+enum Alignment{
+    right,
+    left,
+    center,
+}
 
 
 //Need to take care of \n
@@ -81,6 +99,7 @@ fn main() {
     let mut default_slide_color = [256.0, 256.0, 256.0];
     let mut default_font_color = [0.0, 0.0, 0.0];
     let mut default_font_size = 16; 
+    let mut default_alignment = Alignment::right; 
     
     let text1 = "Testing string one";
     //test image
@@ -169,6 +188,13 @@ fn main() {
                     }
                     println!("Now font is {:?}", default_font_color);
                 } 
+                else if config_data.kwd == ConfigKwds::align{
+                    if let ValueType::Str(ref s) = config_data.data{
+                        if s.to_lowercase() == "right"{default_alignment = Alignment::right;}
+                        else if s.to_lowercase() == "left"{default_alignment = Alignment::left;}
+                        else if s.to_lowercase() == "center"{default_alignment = Alignment::center;}
+                    };
+                }
             }
         };
 
@@ -228,8 +254,20 @@ fn main() {
                                              default_font_color[1] / 256.0,
                                              default_font_color[2] / 256.0, None));
             current_layer.set_fill_color(fill_color);
-            //current_layer.use_text(string_ele.to_string(), default_font_size, 20.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &font);
-            render_centered_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &ft_default_face, &font);
+
+
+            //Render default text
+            if default_alignment == Alignment::left{
+                current_layer.use_text(string_ele.to_string(), default_font_size, 20.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &font);
+            }
+            else if default_alignment == Alignment::right{
+                render_right_aligned_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &ft_default_face, &font);
+            }
+            else{
+                render_centered_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &ft_default_face, &font);
+            }
+
+
         }
         if add_new_slide{
             let (page_n, layer1) = doc.add_page(dimensions.0, dimensions.1,"Page 2, Layer 1");

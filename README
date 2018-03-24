@@ -1,5 +1,4 @@
 ToDo:
-+add right, left, center align to slide render
 +add font (size, style, color, position, align) to parser
 +add images
 +integrate latex tables and mathmatics rendering

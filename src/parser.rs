@@ -120,6 +120,7 @@ pub enum ConfigKwds{
     font_color,
     font,
     text,
+    align,
     default,
 }
 
@@ -389,6 +390,7 @@ fn config_func(parser_cursor: &mut ParserCursor)->Card{
                        ("height", ConfigKwds::height, Num),
                        ("background_color", ConfigKwds::background_color, Arr),
                        ("font", ConfigKwds::font, Str),
+                       ("align", ConfigKwds::align, Str),
                        ("font_color", ConfigKwds::font_color, Arr)],
                      "#config");
     Card::ConfigCard(card)
@@ -501,6 +503,7 @@ height = 190.5,
 background_color = [100,0,100], //array style
 font = \"Times\"
 font_color = [200, 200, 200],
+align = \"right\"
 extern= \"/path\"
 )
 
