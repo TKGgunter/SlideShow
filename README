@@ -1,14 +1,15 @@
 ToDo:
-+add font (size, style colors) to parser
-+add header to parser
 +add right, left, center align to slide render
++add font (size, style colors, position) to parser
++add header to parser
 +bullets
 +add images
++integrate latex tables and mathmatics rendering
 +div
++newline
 
 +figure out the best way to work with pdf library, do we want lots of layers?(Background layer, text layer, image layer)
 +text aligments, and associated functions.
-+integrate latex tables and mathmatics rendering
 +bullet points character code
 +test footers and headers
 

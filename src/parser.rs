@@ -117,6 +117,7 @@ pub enum ConfigKwds{
     width,
     height,
     background_color,
+    font_color,
     font,
     text,
     default,
@@ -288,6 +289,7 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType)->Value
                 for white_space in WHITE_SPACE.iter(){
                     if parser_cursor.current().unwrap() == *white_space{
                         parser_cursor.next();
+                        continue;
                     }
                 }
                 if parser_cursor.current().unwrap() == ',' || parser_cursor.current().unwrap() == ')' || parser_cursor.current().unwrap() == '}' || parser_cursor.current().unwrap() == ']'{
@@ -318,6 +320,7 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType)->Value
                 for white_space in WHITE_SPACE.iter(){
                     if parser_cursor.current().unwrap() == *white_space{
                         parser_cursor.next();
+                        continue;
                     }
                 }
                 if parser_cursor.current().unwrap() == ')' || parser_cursor.current().unwrap() == '}' || parser_cursor.current().unwrap() == ']'{
@@ -385,7 +388,8 @@ fn config_func(parser_cursor: &mut ParserCursor)->Card{
                      &[("width", ConfigKwds::width, Num),
                        ("height", ConfigKwds::height, Num),
                        ("background_color", ConfigKwds::background_color, Arr),
-                       ("font", ConfigKwds::font, Str) ],
+                       ("font", ConfigKwds::font, Str),
+                       ("font_color", ConfigKwds::font_color, Arr)],
                      "#config");
     Card::ConfigCard(card)
 }
@@ -414,17 +418,32 @@ fn gen_config_func(parser_cursor: &mut ParserCursor, config_keywords: &[(&str, C
         if keyword_primed == false{
             for keyword_value in config_keywords.iter(){
                 let keyword = keyword_value.0;
+                let previous_col = parser_cursor.col;
+                let previous_row = parser_cursor.row;
+                let previous_pos = parser_cursor.pos;
                 if is_keyword(parser_cursor, keyword, false){
-                    keyword_primed = true;
-                    
-                    value = keyword_value.2;
-                    kwd = keyword_value.1;
+                    if parser_cursor.current().unwrap() == ' ' || parser_cursor.current().unwrap() == '='{
+                        keyword_primed = true;
+                        
+                        value = keyword_value.2;
+                        kwd = keyword_value.1;
 
-                    println!("Is a Keyword: {:?} {:?}", keyword, value);
-                    
-                    card.config_data.push(ConfigData{kwd: keyword_value.1, data: ValueType::Err} );
-                    parser_cursor.previous();
-                    break;
+                        println!("Is a Keyword: {:?} {:?}", keyword, value);
+                        
+                        card.config_data.push(ConfigData{kwd: keyword_value.1, data: ValueType::Err} );
+                        parser_cursor.previous();
+                        break;
+                    }
+                    else{
+                        parser_cursor.col = previous_col;
+                        parser_cursor.row = previous_row;
+                        parser_cursor.pos = previous_pos;
+                    }
+                }
+                else{
+                    parser_cursor.col = previous_col;
+                    parser_cursor.row = previous_row;
+                    parser_cursor.pos = previous_pos;
                 }
             }
         }
@@ -481,6 +500,7 @@ width = 254.0,
 height = 190.5,
 background_color = [100,0,100], //array style
 font = \"Times\"
+font_color = [200, 200, 200],
 extern= \"/path\"
 )
 

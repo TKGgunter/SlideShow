@@ -69,15 +69,19 @@ fn render_centered_text( current_layer: &PdfLayerReference, text: &String, font_
 
 //Need to take care of \n
 fn main() {
+    let default_font_path = "/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf";
+    let ft_lib = match freetype::Library::init(){ Ok(lib)=>{lib}, Err(e)=>{panic!("FreeType could not load: {:?}", e)}};
+    let ft_default_face = match ft_lib.new_face(default_font_path, 0) { Ok(face) => {face}, Err(e) => {panic!("Ft face could not be loaded {:?}", e)}};
+    
     //DEFAULT SETINGS
     //16:9
     let mut dimensions = (338.7,190.5);
-    let default_font_data = File::open("/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf").unwrap();
+    let default_font_data = File::open(default_font_path).unwrap();
     //let default_font_data = File::open("/home/gunter/Rust/Projects/SlideShow/assets/lmroman6-regular.otf").unwrap();
     let mut default_slide_color = [256.0, 256.0, 256.0];
-    let default_font_color = [0.0, 0.0, 0.0];
-
-
+    let mut default_font_color = [0.0, 0.0, 0.0];
+    let mut default_font_size = 16; 
+    
     let text1 = "Testing string one";
     //test image
 
@@ -140,6 +144,31 @@ fn main() {
                     }
                     println!("Now it is {:?}", default_slide_color);
                 } 
+                else if config_data.kwd == ConfigKwds::font_color{
+                    
+                    let mut temp_array = Vec::new();
+                    if let ValueType::Arr(ref array) = config_data.data{
+                        for (it, element) in array.iter().enumerate(){
+                            if let &ValueType::Num(ref number) = element{
+                                temp_array.push(number + 0.0);
+                            }
+                            else{
+                                println!("Unexpected Value type in Configuration");
+                            }
+                        }
+                    }
+                    else{
+                        println!("Unexpected Value type in Configuration");
+                    }
+
+                    println!("Background font color was {:?}", default_font_color);
+                    if temp_array.len() == 3{
+                        default_font_color[0] = temp_array[0];
+                        default_font_color[1] = temp_array[1];
+                        default_font_color[2] = temp_array[2];
+                    }
+                    println!("Now font is {:?}", default_font_color);
+                } 
             }
         };
 
@@ -175,7 +204,8 @@ fn main() {
                                              default_font_color[1] / 256.0,
                                              default_font_color[2] / 256.0, None));
             current_layer.set_fill_color(fill_color);
-            current_layer.use_text(string_ele.to_string(), 32, 20.0, 168.0 - (it as f64 * 0.02 * 25.4* 32.0), &font);
+            //current_layer.use_text(string_ele.to_string(), default_font_size, 20.0, 168.0 - (it as f64 * 0.02 * 25.4* 32.0), &font);
+            render_centered_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, 168.0 - (it as f64 * 0.02 * 25.4* 32.0), &ft_default_face, &font);
         }
         if add_new_slide{
             let (page_n, layer1) = doc.add_page(dimensions.0, dimensions.1,"Page 2, Layer 1");
