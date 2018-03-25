@@ -1,3 +1,8 @@
+
+ITS TIME TO CLEAN UP THE OUTPUT. ERROR CODES AND THE LIKE.
+
+
+
 ToDo:
 +add font (size, style, color, position, align) to parser
 +add images
@@ -6,6 +11,7 @@ ToDo:
 +take outside files
 +clean up console output
 +errors statements
++default slide style
 +add header to parser
 +bullets
 +newline

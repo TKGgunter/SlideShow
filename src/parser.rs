@@ -116,11 +116,15 @@ pub enum ValueType{
 pub enum ConfigKwds{
     width,
     height,
+    pos_x,
+    pos_y,
     background_color,
     font_color,
+    font_size,
     font,
-    text,
     align,
+    text,
+    image,
     default,
 }
 
@@ -211,10 +215,29 @@ fn is_config(parser_cursor: &mut ParserCursor)->bool{
 
 
 
+fn image_func(parser_cursor: &mut ParserCursor)->SlideData{
+    println!("Image function");
+    let config = gen_config_func(parser_cursor, 
+                                 &[("path", ConfigKwds::font, LexType::Str),
+                                 ("pos_x", ConfigKwds::pos_x, LexType::Num),
+                                 ("pos_y", ConfigKwds::pos_y, LexType::Num),],
+                                 "#image");
+    parser_cursor.next();
+    let slide_data = ValueType::Err; 
+    let data = SlideData{config: Some(config),
+                         kwd: ConfigKwds::image,
+                         data: slide_data};
+    data
+}
+
 fn font_func(parser_cursor: &mut ParserCursor)->SlideData{
     println!("Font function");
     let config = gen_config_func(parser_cursor, 
-                                 &[("font", ConfigKwds::font, LexType::Str)],
+                                 &[("font", ConfigKwds::font, LexType::Str),
+                                 ("size", ConfigKwds::font_size, LexType::Num),
+                                 ("pos_x", ConfigKwds::pos_x, LexType::Num),
+                                 ("pos_y", ConfigKwds::pos_y, LexType::Num),
+                                 ],
                                  "#font");
     parser_cursor.next();
     let slide_data = gather_value(parser_cursor, LexType::SlideStr);
@@ -272,6 +295,9 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
         if init == true{
             if is_keyword(parser_cursor, "#font(", true) {
                 card.slide_data.push(font_func(parser_cursor));
+            }
+            else if is_keyword(parser_cursor, "#image(", true) {
+                card.slide_data.push(image_func(parser_cursor));
             }
             else {
                 card.slide_data.push( SlideData{ config: None, kwd: ConfigKwds::text, data: gather_value(parser_cursor, LexType::SlideStr) }); 
