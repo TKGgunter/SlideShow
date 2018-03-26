@@ -10,6 +10,7 @@
 
 
 #![allow(dead_code)]
+extern crate ansi_term;
 
 struct ParserCursor{
     file_string: String,
@@ -171,7 +172,7 @@ static ACC_ID:   [char; 1]  =  ['#'];
 static WHITE_SPACE:[char; 3] = [' ','\t', '\n'];
 
 fn parse_error(message: &str, parser_cursor: &ParserCursor){
-    println!("Error: {}  pos:{} row:{}", message, parser_cursor.pos, parser_cursor.row);
+    println!("\t\t{}: {}\n\tUser file pos:{} row:{}", ansi_term::Colour::Red.paint("Error"), message, parser_cursor.pos, parser_cursor.row);
 }
 
 fn is_keyword(parser_cursor: &mut ParserCursor, keyword: &str, reset_pos: bool)->bool{
@@ -216,7 +217,6 @@ fn is_config(parser_cursor: &mut ParserCursor)->bool{
 
 
 fn image_func(parser_cursor: &mut ParserCursor)->SlideData{
-    println!("Image function");
     let config = gen_config_func(parser_cursor, 
                                  &[("path", ConfigKwds::font, LexType::Str),
                                  ("pos_x", ConfigKwds::pos_x, LexType::Num),
@@ -231,7 +231,6 @@ fn image_func(parser_cursor: &mut ParserCursor)->SlideData{
 }
 
 fn font_func(parser_cursor: &mut ParserCursor)->SlideData{
-    println!("Font function");
     let config = gen_config_func(parser_cursor, 
                                  &[("font", ConfigKwds::font, LexType::Str),
                                  ("size", ConfigKwds::font_size, LexType::Num),
@@ -267,7 +266,6 @@ fn slide_config(parser_cursor: &mut ParserCursor)->ConfigCard{
     gen_config_func(parser_cursor, &[("background_color", ConfigKwds::background_color, LexType::Arr)], "#slide")
 }
 fn slide_func(parser_cursor: &mut ParserCursor)->Card{
-    println!("Slide func");
     let mut card = SlideCard{config:None, slide_data:Vec::new()};
     let mut init = false;
     
@@ -276,7 +274,6 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
         if current_char == '#'{
             if is_keyword(parser_cursor, "#slide", true){
                 if init == true{
-                    println!("New slide");
                     parser_cursor.previous();
                     break;
                 }
@@ -330,7 +327,10 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType)->Value
                     }
                     if good_number == true { value.push(parser_cursor.current().unwrap()); }
                     else {
-                        println!("Unexpected character: {}. Function gather_value line {}", parser_cursor.current().unwrap(), line!());
+
+                        let err_str = format!("Unexpected character: \"{}\", expected \"0-9\". Function gather_value line {} does not like.", parser_cursor.current().unwrap(), line!());
+                        parse_error(&err_str, parser_cursor);
+                        //println!("Unexpected character: {}. Function gather_value line {}", parser_cursor.current().unwrap(), line!());
                         break;
                     }
                     parser_cursor.next();
@@ -368,7 +368,6 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType)->Value
                     parser_cursor.next();
                 }
             }
-            println!("arr => {:?}", arr);
             ValueType::Arr(arr)
             //ValueType::Err 
         },
@@ -424,7 +423,6 @@ fn config_func(parser_cursor: &mut ParserCursor)->Card{
 
 fn gen_config_func(parser_cursor: &mut ParserCursor, config_keywords: &[(&str, ConfigKwds, LexType)], keyword: &str)->ConfigCard{
     use self::LexType::*;
-    println!("General Config func");
     let mut card = ConfigCard{config_data: Vec::new()};
 
     is_keyword(parser_cursor, keyword, false);
@@ -456,7 +454,7 @@ fn gen_config_func(parser_cursor: &mut ParserCursor, config_keywords: &[(&str, C
                         value = keyword_value.2;
                         kwd = keyword_value.1;
 
-                        println!("Is a Keyword: {:?} {:?}", keyword, value);
+                        //println!("Is a Keyword: {:?} {:?}", keyword, value);
                         
                         card.config_data.push(ConfigData{kwd: keyword_value.1, data: ValueType::Err} );
                         parser_cursor.previous();
@@ -478,7 +476,9 @@ fn gen_config_func(parser_cursor: &mut ParserCursor, config_keywords: &[(&str, C
         else{
             let index = card.config_data.len() - 1; 
             if parser_cursor.current().unwrap() != '='{
-                println!("Err {:?}", parser_cursor.current());
+
+                let error_str = format!("Unexpected character: \"{}\", expected \"=\".", parser_cursor.current().unwrap());
+                parse_error(&error_str, parser_cursor);
                 card.config_data[index] = ConfigData{ kwd: kwd, data: ValueType::Err};
                 keyword_primed = false;
             } 
@@ -486,8 +486,8 @@ fn gen_config_func(parser_cursor: &mut ParserCursor, config_keywords: &[(&str, C
                 parser_cursor.next(); 
                 let gathered_value = gather_value(parser_cursor, value);
 
-                println!("Keyword: {:?}", value);
-                println!("{:?}", gathered_value);
+                //println!("Keyword: {:?}", value);
+                //println!("{:?}", gathered_value);
 
                 card.config_data[index] = ConfigData{ kwd: kwd, data: gathered_value};
                 keyword_primed =  false;
@@ -570,10 +570,14 @@ We can even add images
 ##"
 
     ));
+
+    println!("FILE:\n\n{}\n\nBEGINNING CARD GENERATION", parser_cursor.file_string);
+
     let mut chars = Vec::<char>::new();
     let mut document_structure = Vec::<Card>::new();
     loop{
         
+        //Push Cards in to document 
         {
             let card = read_contents(&mut parser_cursor);
             if card != Card::Default{
@@ -586,11 +590,13 @@ We can even add images
         }
         if parser_cursor.peek() == None{break;} 
     }
-    println!("{}", parser_cursor.file_string);
+/*
     for card in document_structure.iter(){
+        //This should be written to some file
         println!("{:?}", card);
         println!("");
     }
+*/
     document_structure
 }
 

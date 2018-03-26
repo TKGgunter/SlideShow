@@ -148,9 +148,6 @@ fn set_settings( card: &ConfigCard,
 
 
 
-
-
-
 #[derive(PartialEq)]
 enum Alignment{
     right,
@@ -161,9 +158,13 @@ enum Alignment{
 #[derive(PartialEq)]
 struct Align{ data: Alignment}
 
+
+
+
 //Need to take care of \n
 fn main() {
-    let default_font_path = "/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf";
+    let default_font_path = "/home/gunter/Rust/Projects/SlideShow/assets/fonts/ofl/salsa/Salsa-Regular.ttf";
+    //let default_font_path = "/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf";
     let ft_lib = match freetype::Library::init(){ Ok(lib)=>{lib}, Err(e)=>{panic!("FreeType could not load: {:?}", e)}};
     let ft_default_face = match ft_lib.new_face(default_font_path, 0) { Ok(face) => {face}, Err(e) => {panic!("Ft face could not be loaded {:?}", e)}};
     
@@ -187,7 +188,7 @@ fn main() {
 
 
     let document = example();
-
+    println!("CARD GENERATION COMPLETE.\n\nSTARTING PDF GENERATION");
 
     if document.len() > 0{
         if let Card::ConfigCard(ref card) = document[0]{
@@ -216,7 +217,7 @@ fn main() {
         if let Card::ConfigCard(ref card) = document[i] {
 
             add_new_slide = false;
-            println!("{:?}", card);
+            //println!("{:?}", card);
 
             set_settings(card, &mut dimensions, &mut default_slide_color,
                          &mut default_font_color, &mut default_alignment);
@@ -271,7 +272,6 @@ fn main() {
                         }
                     }
                 }
-                println!("text width {} {:?}", calc_text_width_pt(&string_arr[string_arr.len() - 1].to_string(), 16, &ft_default_face) * PT_MM, dimensions.0);
             }
         };
         println!("{:?}", string_arr);
