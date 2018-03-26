@@ -172,7 +172,7 @@ static ACC_ID:   [char; 1]  =  ['#'];
 static WHITE_SPACE:[char; 3] = [' ','\t', '\n'];
 
 fn parse_error(message: &str, parser_cursor: &ParserCursor){
-    println!("\t\t{}: {}\n\tUser file pos:{} row:{}", ansi_term::Colour::Red.paint("Error"), message, parser_cursor.pos, parser_cursor.row);
+    println!("\t\t{}: {}\n\tUser file row:{}  col:{}  pos:{}\n", ansi_term::Colour::Red.paint("Error"), message, parser_cursor.row, parser_cursor.col, parser_cursor.pos);
 }
 
 fn is_keyword(parser_cursor: &mut ParserCursor, keyword: &str, reset_pos: bool)->bool{

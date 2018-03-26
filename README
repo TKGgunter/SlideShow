@@ -9,8 +9,7 @@ ToDo:
 +integrate latex tables and mathmatics rendering from an external python script
 +div
 +take outside files
-+clean up console output
-+errors statements
++Better errors statements
 +default slide style
 +add header to parser
 +bullets
@@ -36,3 +35,11 @@ render tables, maths
 Divs ?How will we handle \n\t ?
 Headers, text, ~code~
 To pdf & to html
+
+Error Statement:
+    Error: Unexpected character: ".", expected "0-9". User file NAME:  row:42   col:12  pos: 231  
+Card Type: Slide, Expected value type: NUM.
+Function gather_value line 331 does not like.
+  
+
+
