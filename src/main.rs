@@ -11,6 +11,10 @@ use parser::{Card, ConfigCard, SlideCard, ConfigKwds, ValueType, example};
 
 
 static PT_MM : f64 = 0.352778;
+static PX_MM : f64 = 0.02 * 25.4;
+
+
+
 /// Calculates the lower left of a centered string, to position it correctly in the document
 /// 
 /// Parameters:
@@ -148,7 +152,7 @@ fn set_settings( card: &ConfigCard,
 
 
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 enum Alignment{
     right,
     left,
@@ -158,6 +162,14 @@ enum Alignment{
 #[derive(PartialEq)]
 struct Align{ data: Alignment}
 
+#[derive(Debug)]
+struct SpecialText{ 
+    align:      Alignment,
+    font_size:  i64,
+    position:   [f64;2],
+    font_color: [f64;3],
+    string:     String,
+} 
 
 
 
@@ -189,6 +201,9 @@ fn main() {
 
     let document = example();
     println!("CARD GENERATION COMPLETE.\n\nSTARTING PDF GENERATION");
+    for card in document.iter(){
+        println!("{:?}\n\n", card);
+    }
 
     if document.len() > 0{
         if let Card::ConfigCard(ref card) = document[0]{
@@ -224,9 +239,10 @@ fn main() {
         };
 
         let mut string_arr = Vec::<String>::new();
+        let mut sp_string_arr = Vec::<SpecialText>::new();
+
         if let Card::SlideCard(ref slide) = document[i]{
             add_new_slide = true;
-
 
             if let Some(ref config) = slide.config {
 
@@ -240,15 +256,41 @@ fn main() {
                              &mut temp_slide_color,
                              &mut temp_font_color,
                              &mut temp_alignment);
+
+                //ToDo: Need to add everything else
                 if temp_slide_color[0] != -1.0{
                     some_slide_color = Some(temp_slide_color);
                 }
             };  
 
             for element in slide.slide_data.iter(){
+
+
+                let mut temp_sp_string = SpecialText{ align: Alignment::default, 
+                                                font_size: -1, 
+                                                position: [-1.0, -1.0], 
+                                                font_color: [-1.0, -1.0, -1.0], 
+                                                string: String::new()};
+                //Under construction!!!!!!
+                if let Some(ref config) = element.config{
+                    println!("Under construction");
+                    let mut temp_dimensions = (-1.0, -1.0);
+                    let mut temp_slide_color = [-1.0, -1.0, -1.0];
+                    let mut temp_font_color = [-1.0, -1.0, -1.0];
+                    let mut temp_font_size = -1; 
+                    let mut temp_alignment = Align{data: Alignment::right}; 
+
+                    set_settings(config, &mut temp_dimensions,
+                                 &mut temp_slide_color,
+                                 &mut temp_font_color,
+                                 &mut temp_alignment);
+                }
+
                 if let ValueType::Str(ref string) = element.data{
                     if calc_text_width_pt(&string.to_string(), default_font_size, &ft_default_face) * PT_MM <  dimensions.0{
-                        string_arr.push(string.to_string());
+                        temp_sp_string.string = string.to_string();
+                        string_arr.push(string.to_string()); //Soon Defunc
+                        sp_string_arr.push(temp_sp_string);
                     }
                     else{
                         //Needed for text wrapping
@@ -260,18 +302,31 @@ fn main() {
                                     temp_string.push_str(&format!("{} ",string_ele));
                                 },
                                 None => {
-                                    string_arr.push(temp_string);
+                                    let temp_temp_str = temp_string[..].to_string();
+                                    string_arr.push(temp_string); //Soon Defunc
+                                    sp_string_arr.push(SpecialText{ align: Alignment::default, 
+                                                                    font_size: -1, 
+                                                                    position: [-1.0, -1.0], 
+                                                                    font_color: [-1.0, -1.0, -1.0], 
+                                                                    string: temp_temp_str});
                                     break;}
                             }
                             if let Some(string_peek) = string_iter.peek() { 
                                 if calc_text_width_pt(&format!("{} {}", temp_string, string_peek), default_font_size, &ft_default_face) * PT_MM >  dimensions.0{
-                                    string_arr.push(temp_string);
+                                    let temp_temp_str = temp_string[..].to_string();
+                                    string_arr.push(temp_string); //Soon Defunc
+                                    sp_string_arr.push(SpecialText{ align: Alignment::default, 
+                                                                    font_size: -1, 
+                                                                    position: [-1.0, -1.0], 
+                                                                    font_color: [-1.0, -1.0, -1.0], 
+                                                                    string: temp_temp_str});
                                     temp_string = String::new();
                                 }
                             };
                         }
                     }
                 }
+                ///////////////////
             }
         };
         println!("{:?}", string_arr);
@@ -309,13 +364,13 @@ fn main() {
 
             //Render default text
             if default_alignment.data == Alignment::left{
-                current_layer.use_text(string_ele.to_string(), default_font_size, 20.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &font);
+                current_layer.use_text(string_ele.to_string(), default_font_size, 20.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * default_font_size as f64), &font);
             }
             else if default_alignment.data == Alignment::right{
-                render_right_aligned_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &ft_default_face, &font);
+                render_right_aligned_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * default_font_size as f64), &ft_default_face, &font);
             }
             else if default_alignment.data == Alignment::center{
-                render_centered_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, 168.0 - (it as f64 * 0.02 * 25.4* default_font_size as f64), &ft_default_face, &font);
+                render_centered_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * default_font_size as f64), &ft_default_face, &font);
             }
 
 

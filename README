@@ -1,10 +1,9 @@
-
-ITS TIME TO CLEAN UP THE OUTPUT. ERROR CODES AND THE LIKE.
-
-
+Bugs:
++Empty slide at the beginning of some slides. What is this about?
 
 ToDo:
 +add font (size, style, color, position, align) to parser
+  ->We want to use the special text struct for all text .... I think maybe so...
 +add images
 +integrate latex tables and mathmatics rendering from an external python script
 +div
