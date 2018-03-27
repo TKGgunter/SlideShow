@@ -91,7 +91,7 @@ impl ParserCursor{
 
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum LexType{
     Punc,
     Num,
@@ -120,12 +120,14 @@ pub enum ConfigKwds{
     pos_x,
     pos_y,
     background_color,
+    font,
     font_color,
     font_size,
-    font,
+    font_family,
     align,
     text,
     image,
+    path,
     default,
 }
 
@@ -218,7 +220,7 @@ fn is_config(parser_cursor: &mut ParserCursor)->bool{
 
 fn image_func(parser_cursor: &mut ParserCursor)->SlideData{
     let config = gen_config_func(parser_cursor, 
-                                 &[("path", ConfigKwds::font, LexType::Str),
+                                 &[("path", ConfigKwds::path, LexType::Str),
                                  ("pos_x", ConfigKwds::pos_x, LexType::Num),
                                  ("pos_y", ConfigKwds::pos_y, LexType::Num),],
                                  "#image");
@@ -232,7 +234,7 @@ fn image_func(parser_cursor: &mut ParserCursor)->SlideData{
 
 fn font_func(parser_cursor: &mut ParserCursor)->SlideData{
     let config = gen_config_func(parser_cursor, 
-                                 &[("font", ConfigKwds::font, LexType::Str),
+                                 &[("family", ConfigKwds::font_family, LexType::Str),
                                  ("size", ConfigKwds::font_size, LexType::Num),
                                  ("pos_x", ConfigKwds::pos_x, LexType::Num),
                                  ("pos_y", ConfigKwds::pos_y, LexType::Num),
@@ -240,7 +242,7 @@ fn font_func(parser_cursor: &mut ParserCursor)->SlideData{
                                  ],
                                  "#font");
     parser_cursor.next();
-    let slide_data = gather_value(parser_cursor, LexType::SlideStr);
+    let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
     let data = SlideData{config: Some(config),
                          kwd: ConfigKwds::text,
                          data: slide_data};
@@ -255,7 +257,7 @@ fn div_func(parser_cursor: &mut ParserCursor)->SlideData{
                                  &[("font", ConfigKwds::font, LexType::Str)],
                                  "#div");
     parser_cursor.next();
-    let slide_data = gather_value(parser_cursor, LexType::SlideStr);
+    let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
     let data = SlideData{config: Some(config),
                          kwd: ConfigKwds::text,
                          data: slide_data};
@@ -298,7 +300,7 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
                 card.slide_data.push(image_func(parser_cursor));
             }
             else {
-                card.slide_data.push( SlideData{ config: None, kwd: ConfigKwds::text, data: gather_value(parser_cursor, LexType::SlideStr) }); 
+                card.slide_data.push( SlideData{ config: None, kwd: ConfigKwds::text, data: gather_value(parser_cursor, LexType::SlideStr, None) }); 
             }
         }
         if parser_cursor.next() == None { break; }
@@ -306,7 +308,7 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
     Card::SlideCard(card)
 }
 
-fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType)->ValueType{
+fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_type: Option<LexType>)->ValueType{
     match expected_type{
         LexType::Num => {
             let mut value = String::from("");
@@ -331,7 +333,6 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType)->Value
 
                         let err_str = format!("Unexpected character: \"{}\", expected \"0-9\". Function gather_value line {} does not like.", parser_cursor.current().unwrap(), line!());
                         parse_error(&err_str, parser_cursor);
-                        //println!("Unexpected character: {}. Function gather_value line {}", parser_cursor.current().unwrap(), line!());
                         break;
                     }
                     parser_cursor.next();
@@ -363,8 +364,15 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType)->Value
                         if parser_cursor.current().unwrap() == '[' { init = true; } 
                     }
                     else{
-                        let value = gather_value(parser_cursor, LexType::Num);
-                        arr.push(value);
+                        if let Some(lex_type) = arr_type{ 
+                            let value = gather_value(parser_cursor, lex_type, None);
+                            arr.push(value);
+                        }
+                        else{
+                            println!("No array value given!");
+                            let value = gather_value(parser_cursor, LexType::Num, None);
+                            arr.push(value);
+                        }
                     }
                     parser_cursor.next();
                 }
@@ -415,8 +423,8 @@ fn config_func(parser_cursor: &mut ParserCursor)->Card{
                      &[("width", ConfigKwds::width, Num),
                        ("height", ConfigKwds::height, Num),
                        ("background_color", ConfigKwds::background_color, Arr),
-                       ("font", ConfigKwds::font, Str),
                        ("align", ConfigKwds::align, Str),
+                       ("font", ConfigKwds::font, Str),
                        ("font_color", ConfigKwds::font_color, Arr)],
                      "#config");
     Card::ConfigCard(card)
@@ -485,10 +493,13 @@ fn gen_config_func(parser_cursor: &mut ParserCursor, config_keywords: &[(&str, C
             } 
             else{
                 parser_cursor.next(); 
-                let gathered_value = gather_value(parser_cursor, value);
-
-                //println!("Keyword: {:?}", value);
-                //println!("{:?}", gathered_value);
+                let mut arr_lextype: Option<LexType> = None;
+                if value == LexType::Arr{ 
+                    if kwd == ConfigKwds::font{ arr_lextype = Some(LexType::Str);}
+                    else if kwd == ConfigKwds::font_color{ arr_lextype = Some(LexType::Num);}
+                    else if kwd == ConfigKwds::background_color{ arr_lextype = Some(LexType::Num);}
+                } 
+                let gathered_value = gather_value(parser_cursor, value, arr_lextype);
 
                 card.config_data[index] = ConfigData{ kwd: kwd, data: gathered_value};
                 keyword_primed =  false;
@@ -528,7 +539,7 @@ pub fn example()->Vec<Card>{
 width = 254.0,
 height = 190.5,
 background_color = [100,0,100], //array style
-font = \"Times\"
+font = [\"Times\", \"ASDF/aSDFA/FASDFA\"],
 font_color = [200, 200, 200],
 align = \"center\"
 extern= \"/path\"
@@ -547,15 +558,11 @@ We can create a new line with #newline
 We can also change slide configurations for specific slides
 
 #slide
-#font(font=\"Times\", size=42, style=\"bold\") We got a different font
+#font(size=42) We can do different sized text
 #font(pos_x= 0.7, pos_y= 0.1, color=[0,0,150]) Place text where you want
+#font(family=\"Times\", size=32, style=\"bold\") We can change fonts!
 
 #slide
-#font(font=\"Times\", size=32, style=\"bold\"){
-What if we have many blocks of text with the same font.
-
-Well we got you covered.
-}
 
 
 #slide

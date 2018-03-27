@@ -4,6 +4,7 @@ Bugs:
 ToDo:
 +add font (style, position) to parser
   ->How should pre and post #font positions work?
+  ->Explictly add fonts and font names
 +add images to parser
 +add post parser decoder to main
 +integrate latex tables and mathmatics rendering from an external python script
@@ -22,6 +23,7 @@ ToDo:
 
 Things to think about
 +figure out the best way to work with pdf library, do we want lots of layers?(Background layer, text layer, image layer)
++Figure out how to use fonts built into the lib.
 +bullet points character code
 +test footers and headers
 

@@ -97,6 +97,7 @@ fn set_settings( card: &ConfigCard,
                  background_color: &mut [f64;3],
                  font_color: &mut [f64;3],
                  font_size: &mut i64,
+                 font_family: &mut [String; 2],
                  alignment: &mut Align,
                  ){
 
@@ -148,6 +149,7 @@ fn set_settings( card: &ConfigCard,
             }
         } 
         else if config_data.kwd == ConfigKwds::align{
+
             if let ValueType::Str(ref s) = config_data.data{
                 if s.to_lowercase()      == "right"{    alignment.data = Alignment::right;}
                 else if s.to_lowercase() == "left"{     alignment.data = Alignment::left;}
@@ -155,10 +157,27 @@ fn set_settings( card: &ConfigCard,
             };
         }
         else if config_data.kwd == ConfigKwds::font_size{
-           if let ValueType::Num(ref num) = config_data.data{
-               *font_size = (num + 0.0) as i64; 
-           }
+
+             if let ValueType::Num(ref num) = config_data.data{
+                 *font_size = (num + 0.0) as i64; 
+             }
         }
+        else if config_data.kwd == ConfigKwds::font{
+
+            let mut temp_array = Vec::new();
+            if let ValueType::Arr(ref array) = config_data.data{
+                for (it, element) in array.iter().enumerate(){
+                    if let &ValueType::Str(ref string) = element{
+                        temp_array.push(format!("{}", string));
+                    }
+                }
+            }
+            if temp_array.len() == 2{
+               font_family[0] = format!("{}", temp_array[0]); 
+               font_family[1] = format!("{}", temp_array[1]); 
+            }
+        }
+        //END OF IFS//
     }
 }
 
@@ -194,10 +213,14 @@ impl SpecialText{
 }
 
 
-//Need to take care of \n
+static DEFAULT_FONTS:   [&str; 3]  =  ["times","helvetica", "Courier"];
+
+
+
 fn main() {
-    //let default_font_path = "/home/gunter/Rust/Projects/SlideShow/assets/fonts/ofl/salsa/Salsa-Regular.ttf";
-    let default_font_path = "/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf";
+
+    let default_font_path = "/home/gunter/Rust/Projects/SlideShow/assets/fonts/ofl/salsa/Salsa-Regular.ttf";
+    //let default_font_path = "/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf";
     let ft_lib = match freetype::Library::init(){ Ok(lib)=>{lib}, Err(e)=>{panic!("FreeType could not load: {:?}", e)}};
     let ft_default_face = match ft_lib.new_face(default_font_path, 0) { Ok(face) => {face}, Err(e) => {panic!("Ft face could not be loaded {:?}", e)}};
     
@@ -215,9 +238,11 @@ fn main() {
     let mut some_font_size   : Option<f64> = None;
     let mut some_alignment   : Option<Alignment>= None;
 
-    let default_img = image::open("/home/tgunter/Rust/SlideShow/assets/linux_peng.png").unwrap();
-    println!("{:?}", default_img.get_pixel(100,100));
-    println!("{:?}", default_img.get_pixel(300,300));
+
+
+ ///////////////////////////////////////////////////
+    let default_img = image::open("/home/gunter/Rust/Projects/SlideShow/assets/linux_peng.png").unwrap();
+    //let default_img = image::open("/home/tgunter/Rust/SlideShow/assets/linux_peng.png").unwrap();
 
     let mut image_data = ImageXObject{
         width: default_img.dimensions().0 as i64,
@@ -235,10 +260,12 @@ fn main() {
         image_data.image_data.push( pixel.2[1] as u8);
         image_data.image_data.push( pixel.2[2] as u8);
     }
+ ///////////////////////////////////////////////////
     
-    let text1 = "Testing string one";
-    //test image
-    
+
+   
+
+ 
 
     let document = example();
     println!("CARD GENERATION COMPLETE.\n\nSTARTING PDF GENERATION");
@@ -263,10 +290,12 @@ fn main() {
         }
     }
 
+
     let (doc, page1, layer1) = PdfDocument::new("PDF_Document_title", dimensions.0, dimensions.1, "Layer 1");
     let font = doc.add_external_font(default_font_data).unwrap();
     let mut current_layer = doc.get_page(page1).get_layer(layer1);
     let mut add_new_slide = true;
+
 
     for i in 0..document.len(){
     
@@ -275,10 +304,12 @@ fn main() {
             add_new_slide = false;
             //println!("{:?}", card);
 
+            let mut temp_font_family = [String::new(), String::new()];
             set_settings(card,  &mut dimensions, 
                                 &mut default_slide_color,
                                 &mut default_font_color, 
                                 &mut default_font_size, 
+                                &mut temp_font_family, 
                                 &mut default_alignment);
         };
 
@@ -292,6 +323,7 @@ fn main() {
                 let mut temp_dimensions = (-1.0, -1.0);
                 let mut temp_slide_color = [-1.0, -1.0, -1.0];
                 let mut temp_font_color = [-1.0, -1.0, -1.0];
+                let mut temp_font_family = [String::new(), String::new()];
                 let mut temp_font_size = -1; 
                 let mut temp_alignment = Align{data: Alignment::right}; 
 
@@ -299,6 +331,7 @@ fn main() {
                              &mut temp_slide_color,
                              &mut temp_font_color,
                              &mut temp_font_size,
+                             &mut temp_font_family,
                              &mut temp_alignment);
 
                 //ToDo: Need to add everything else
@@ -319,6 +352,7 @@ fn main() {
                     let mut temp_dimensions = (-1.0, -1.0);
                     let mut temp_slide_color = [-1.0, -1.0, -1.0];
                     let mut temp_font_color = [-1.0, -1.0, -1.0];
+                    let mut temp_font_family = [String::new(), String::new()];
                     let mut temp_font_size = -1; 
                     let mut temp_alignment = Align{data: Alignment::right}; 
 
@@ -326,6 +360,7 @@ fn main() {
                                  &mut temp_slide_color,
                                  &mut temp_font_color,
                                  &mut temp_font_size,
+                                 &mut temp_font_family,
                                  &mut temp_alignment);
 
                     temp_text.align = temp_alignment.data;
@@ -435,7 +470,15 @@ fn main() {
             current_layer = doc.get_page(page_n).get_layer(layer1);
         }
     }
+
+
+    //Testing area
     Image::from(image_data).add_to_layer(current_layer.clone(), Some(100.0), Some(100.0), None, None, None, None); //Defauct
+    let b_font = doc.add_builtin_font(BuiltinFont::TimesRoman).unwrap();
+    current_layer.use_text("Something...", 32, 10.0, 10.0, &b_font);
+    //
+
+
     doc.save(&mut BufWriter::new(File::create("test_working.pdf").unwrap())).unwrap();
 }
 
