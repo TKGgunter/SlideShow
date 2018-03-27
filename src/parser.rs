@@ -546,7 +546,7 @@ We can create a new line with #newline
 We can also change slide configurations for specific slides
 
 #slide
-#font(font=\"Times\", size=32, style=\"bold\") We got a different font
+#font(font=\"Times\", size=42, style=\"bold\") We got a different font
 #font(pos_x= 0.7, pos_y= 0.1) Place text where you want
 
 #slide

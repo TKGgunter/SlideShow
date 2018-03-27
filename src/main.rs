@@ -90,6 +90,7 @@ fn set_settings( card: &ConfigCard,
                  dimensions: &mut (f64, f64), 
                  background_color: &mut [f64;3],
                  font_color: &mut [f64;3],
+                 font_size: &mut i64,
                  alignment: &mut Align,
                  ){
 
@@ -147,12 +148,17 @@ fn set_settings( card: &ConfigCard,
                 else if s.to_lowercase() == "center"{   alignment.data = Alignment::center;}
             };
         }
+        else if config_data.kwd == ConfigKwds::font_size{
+           if let ValueType::Num(ref num) = config_data.data{
+               *font_size = (num + 0.0) as i64; 
+           }
+        }
     }
 }
 
 
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 enum Alignment{
     right,
     left,
@@ -171,12 +177,21 @@ struct SpecialText{
     string:     String,
 } 
 
+impl SpecialText{
+    fn default()->SpecialText{
+        SpecialText{align: Alignment::default, 
+                    font_size: -1, 
+                    position: [-1.0, -1.0], 
+                    font_color: [-1.0, -1.0, -1.0], 
+                    string: String::new(),}
+    }
+}
 
 
 //Need to take care of \n
 fn main() {
-    let default_font_path = "/home/gunter/Rust/Projects/SlideShow/assets/fonts/ofl/salsa/Salsa-Regular.ttf";
-    //let default_font_path = "/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf";
+    //let default_font_path = "/home/gunter/Rust/Projects/SlideShow/assets/fonts/ofl/salsa/Salsa-Regular.ttf";
+    let default_font_path = "/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf";
     let ft_lib = match freetype::Library::init(){ Ok(lib)=>{lib}, Err(e)=>{panic!("FreeType could not load: {:?}", e)}};
     let ft_default_face = match ft_lib.new_face(default_font_path, 0) { Ok(face) => {face}, Err(e) => {panic!("Ft face could not be loaded {:?}", e)}};
     
@@ -184,10 +199,9 @@ fn main() {
     //16:9
     let mut dimensions = (338.7,190.5);
     let default_font_data = File::open(default_font_path).unwrap();
-    //let default_font_data = File::open("/home/gunter/Rust/Projects/SlideShow/assets/lmroman6-regular.otf").unwrap();
     let mut default_slide_color = [256.0, 256.0, 256.0];
     let mut default_font_color = [0.0, 0.0, 0.0];
-    let mut default_font_size = 16; 
+    let mut default_font_size : i64 = 16; 
     let mut default_alignment = Align{data: Alignment::right}; 
 
     let mut some_slide_color : Option<[f64; 3]> = None;
@@ -234,12 +248,14 @@ fn main() {
             add_new_slide = false;
             //println!("{:?}", card);
 
-            set_settings(card, &mut dimensions, &mut default_slide_color,
-                         &mut default_font_color, &mut default_alignment);
+            set_settings(card,  &mut dimensions, 
+                                &mut default_slide_color,
+                                &mut default_font_color, 
+                                &mut default_font_size, 
+                                &mut default_alignment);
         };
 
-        let mut string_arr = Vec::<String>::new();
-        let mut sp_string_arr = Vec::<SpecialText>::new();
+        let mut text_arr = Vec::<SpecialText>::new();
 
         if let Card::SlideCard(ref slide) = document[i]{
             add_new_slide = true;
@@ -255,6 +271,7 @@ fn main() {
                 set_settings(config, &mut temp_dimensions,
                              &mut temp_slide_color,
                              &mut temp_font_color,
+                             &mut temp_font_size,
                              &mut temp_alignment);
 
                 //ToDo: Need to add everything else
@@ -266,7 +283,7 @@ fn main() {
             for element in slide.slide_data.iter(){
 
 
-                let mut temp_sp_string = SpecialText{ align: Alignment::default, 
+                let mut temp_text = SpecialText{ align: Alignment::default, 
                                                 font_size: -1, 
                                                 position: [-1.0, -1.0], 
                                                 font_color: [-1.0, -1.0, -1.0], 
@@ -283,14 +300,19 @@ fn main() {
                     set_settings(config, &mut temp_dimensions,
                                  &mut temp_slide_color,
                                  &mut temp_font_color,
+                                 &mut temp_font_size,
                                  &mut temp_alignment);
+
+                    temp_text.align = temp_alignment.data;
+                    temp_text.font_size = temp_font_size;
+                    temp_text.font_color = temp_font_color;
                 }
 
+
                 if let ValueType::Str(ref string) = element.data{
-                    if calc_text_width_pt(&string.to_string(), default_font_size, &ft_default_face) * PT_MM <  dimensions.0{
-                        temp_sp_string.string = string.to_string();
-                        string_arr.push(string.to_string()); //Soon Defunc
-                        sp_string_arr.push(temp_sp_string);
+                    if calc_text_width_pt(&string.to_string(), temp_text.font_size, &ft_default_face) * PT_MM <  dimensions.0{
+                        temp_text.string = string.to_string();
+                        text_arr.push(temp_text);
                     }
                     else{
                         //Needed for text wrapping
@@ -302,24 +324,26 @@ fn main() {
                                     temp_string.push_str(&format!("{} ",string_ele));
                                 },
                                 None => {
+
                                     let temp_temp_str = temp_string[..].to_string();
-                                    string_arr.push(temp_string); //Soon Defunc
-                                    sp_string_arr.push(SpecialText{ align: Alignment::default, 
-                                                                    font_size: -1, 
-                                                                    position: [-1.0, -1.0], 
-                                                                    font_color: [-1.0, -1.0, -1.0], 
-                                                                    string: temp_temp_str});
-                                    break;}
+                                    let return_text = SpecialText{  align: temp_text.align,
+                                                                    font_size: temp_text.font_size,
+                                                                    position: temp_text.position,
+                                                                    font_color: temp_text.font_color,
+                                                                    string: temp_temp_str};
+                                    text_arr.push(return_text);
+                                    break;
+                                }
                             }
                             if let Some(string_peek) = string_iter.peek() { 
-                                if calc_text_width_pt(&format!("{} {}", temp_string, string_peek), default_font_size, &ft_default_face) * PT_MM >  dimensions.0{
+                                if calc_text_width_pt(&format!("{} {}", temp_string, string_peek), temp_text.font_size, &ft_default_face) * PT_MM >  dimensions.0{
                                     let temp_temp_str = temp_string[..].to_string();
-                                    string_arr.push(temp_string); //Soon Defunc
-                                    sp_string_arr.push(SpecialText{ align: Alignment::default, 
-                                                                    font_size: -1, 
-                                                                    position: [-1.0, -1.0], 
-                                                                    font_color: [-1.0, -1.0, -1.0], 
-                                                                    string: temp_temp_str});
+                                    let return_text = SpecialText{  align: temp_text.align,
+                                                                    font_size: temp_text.font_size,
+                                                                    position: temp_text.position,
+                                                                    font_color: temp_text.font_color,
+                                                                    string: temp_temp_str};
+                                    text_arr.push(return_text);
                                     temp_string = String::new();
                                 }
                             };
@@ -329,7 +353,7 @@ fn main() {
                 ///////////////////
             }
         };
-        println!("{:?}", string_arr);
+        println!("{:?}", text_arr);
 
         ////////////////////////////////////////////////
         //Background_color
@@ -355,22 +379,29 @@ fn main() {
         ////////////////////////////////////////////////
 
 
-        for (it, string_ele) in string_arr.iter().enumerate(){
-            fill_color = Color::Rgb(Rgb::new(default_font_color[0] / 256.0,
-                                             default_font_color[1] / 256.0,
-                                             default_font_color[2] / 256.0, None));
+        for (it, text_ele) in text_arr.iter_mut().enumerate(){
+
+
+            if text_ele.align == Alignment::default {text_ele.align = default_alignment.data;}
+            if text_ele.font_size == -1         {text_ele.font_size = default_font_size;}
+            if text_ele.font_color[0] == -1.0   {text_ele.font_color = default_font_color;}
+
+
+            fill_color = Color::Rgb(Rgb::new(text_ele.font_color[0] / 256.0,
+                                             text_ele.font_color[1] / 256.0,
+                                             text_ele.font_color[2] / 256.0, None));
             current_layer.set_fill_color(fill_color);
-
-
+            
+            println!("ASDF {}", text_ele.font_size);
             //Render default text
-            if default_alignment.data == Alignment::left{
-                current_layer.use_text(string_ele.to_string(), default_font_size, 20.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * default_font_size as f64), &font);
+            if text_ele.align == Alignment::left{
+                current_layer.use_text(&text_ele.string[..], text_ele.font_size, 20.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &font);
             }
-            else if default_alignment.data == Alignment::right{
-                render_right_aligned_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * default_font_size as f64), &ft_default_face, &font);
+            else if text_ele.align == Alignment::right{
+                render_right_aligned_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, &font);
             }
-            else if default_alignment.data == Alignment::center{
-                render_centered_text( &current_layer, &string_ele.to_string(), default_font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * default_font_size as f64), &ft_default_face, &font);
+            else if text_ele.align == Alignment::center{
+                render_centered_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, &font);
             }
 
 
