@@ -236,6 +236,7 @@ fn font_func(parser_cursor: &mut ParserCursor)->SlideData{
                                  ("size", ConfigKwds::font_size, LexType::Num),
                                  ("pos_x", ConfigKwds::pos_x, LexType::Num),
                                  ("pos_y", ConfigKwds::pos_y, LexType::Num),
+                                 ("color", ConfigKwds::font_color, LexType::Arr),
                                  ],
                                  "#font");
     parser_cursor.next();
@@ -547,7 +548,7 @@ We can also change slide configurations for specific slides
 
 #slide
 #font(font=\"Times\", size=42, style=\"bold\") We got a different font
-#font(pos_x= 0.7, pos_y= 0.1) Place text where you want
+#font(pos_x= 0.7, pos_y= 0.1, color=[0,0,150]) Place text where you want
 
 #slide
 #font(font=\"Times\", size=32, style=\"bold\"){

@@ -2,14 +2,17 @@ Bugs:
 +Empty slide at the beginning of some slides. What is this about?
 
 ToDo:
-+add font (size, style, color, position, align) to parser
-  ->We want to use the special text struct for all text .... I think maybe so...
-+add images
++add font (style, position) to parser
+  ->How should pre and post #font positions work?
++add images to parser
++add post parser decoder to main
 +integrate latex tables and mathmatics rendering from an external python script
-+div
-+take outside files
-+Better errors statements
++Add slide configure options font, font_size, font_color, ...
++take input files
 +default slide style
++div
+  -> Get everything working inside divs
++Better errors statements
 +add header to parser
 +bullets
 +newline

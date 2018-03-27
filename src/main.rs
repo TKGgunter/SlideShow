@@ -1,9 +1,15 @@
 extern crate printpdf;
 extern crate freetype;
+extern crate image;
+
 
 use printpdf::*;
 use std::fs::File;
 use std::io::BufWriter;
+
+use image::GenericImage;
+
+
 
 mod parser;
 use parser::{Card, ConfigCard, SlideCard, ConfigKwds, ValueType, example};
@@ -208,10 +214,31 @@ fn main() {
     let mut some_font_color  : Option<[f64; 3]> = None;
     let mut some_font_size   : Option<f64> = None;
     let mut some_alignment   : Option<Alignment>= None;
+
+    let default_img = image::open("/home/tgunter/Rust/SlideShow/assets/linux_peng.png").unwrap();
+    println!("{:?}", default_img.get_pixel(100,100));
+    println!("{:?}", default_img.get_pixel(300,300));
+
+    let mut image_data = ImageXObject{
+        width: default_img.dimensions().0 as i64,
+        height: default_img.dimensions().1 as i64,
+        color_space: ColorSpace::Rgb,
+        bits_per_component: ColorBits::Bit8,
+        interpolate: true,
+        image_data: Vec::new(),
+        image_filter: None,
+        clipping_bbox: None,
+    };
+
+    for pixel in default_img.pixels(){
+        image_data.image_data.push( pixel.2[0] as u8);
+        image_data.image_data.push( pixel.2[1] as u8);
+        image_data.image_data.push( pixel.2[2] as u8);
+    }
     
     let text1 = "Testing string one";
     //test image
-
+    
 
     let document = example();
     println!("CARD GENERATION COMPLETE.\n\nSTARTING PDF GENERATION");
@@ -288,9 +315,7 @@ fn main() {
                                                 position: [-1.0, -1.0], 
                                                 font_color: [-1.0, -1.0, -1.0], 
                                                 string: String::new()};
-                //Under construction!!!!!!
                 if let Some(ref config) = element.config{
-                    println!("Under construction");
                     let mut temp_dimensions = (-1.0, -1.0);
                     let mut temp_slide_color = [-1.0, -1.0, -1.0];
                     let mut temp_font_color = [-1.0, -1.0, -1.0];
@@ -392,7 +417,6 @@ fn main() {
                                              text_ele.font_color[2] / 256.0, None));
             current_layer.set_fill_color(fill_color);
             
-            println!("ASDF {}", text_ele.font_size);
             //Render default text
             if text_ele.align == Alignment::left{
                 current_layer.use_text(&text_ele.string[..], text_ele.font_size, 20.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &font);
@@ -411,6 +435,7 @@ fn main() {
             current_layer = doc.get_page(page_n).get_layer(layer1);
         }
     }
+    Image::from(image_data).add_to_layer(current_layer.clone(), Some(100.0), Some(100.0), None, None, None, None); //Defauct
     doc.save(&mut BufWriter::new(File::create("test_working.pdf").unwrap())).unwrap();
 }
 
