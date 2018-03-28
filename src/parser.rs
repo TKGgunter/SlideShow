@@ -104,7 +104,7 @@ pub enum LexType{
     SlideStr,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ValueType{
     Num(f64),
     Str(String),
@@ -135,11 +135,11 @@ pub enum ConfigKwds{
 }
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ConfigCard{
     pub config_data: Vec<ConfigData>,
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ConfigData{
     pub kwd: ConfigKwds,
     pub data: ValueType,
@@ -237,7 +237,7 @@ fn image_func(parser_cursor: &mut ParserCursor)->SlideData{
     data
 }
 
-fn font_func(parser_cursor: &mut ParserCursor)->SlideData{
+fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
     let config = gen_config_func(parser_cursor, 
                                  &[("family", ConfigKwds::font_current, LexType::Str),
                                  ("size", ConfigKwds::font_size, LexType::Num),
@@ -247,11 +247,32 @@ fn font_func(parser_cursor: &mut ParserCursor)->SlideData{
                                  ],
                                  "#font");
     parser_cursor.next();
-    let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
-    let data = SlideData{config: Some(config),
-                         kwd: ConfigKwds::text,
-                         data: slide_data};
-    data
+    let mut return_data = Vec::new();
+    if parser_cursor.current() != Some('{'){
+        let mut data = SlideData{  config: Some(config),
+                                   kwd: ConfigKwds::text,
+                                   data: ValueType::Err}; 
+        let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
+        data.data = slide_data; 
+        return_data.push(data);
+    }
+    else{
+        parser_cursor.next();
+        loop{
+            if parser_cursor.current() == Some('}'){break;}
+            else{
+                let mut data = SlideData{  config: Some(config.clone()),
+                                           kwd: ConfigKwds::text,
+                                           data: ValueType::Err}; 
+                let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
+                data.data = slide_data; 
+                return_data.push(data);
+
+                parser_cursor.next();
+            }
+        }
+    }
+    return_data
 }
 
 //Work in progress
@@ -299,7 +320,11 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
         }
         if init == true{
             if is_keyword(parser_cursor, "#font(", true) {
-                card.slide_data.push(font_func(parser_cursor));
+                let mut font_data = font_func(parser_cursor);
+                loop{
+                    if font_data.len() <= 0 {break;}
+                    card.slide_data.push(font_data.pop().unwrap());
+                }
             }
             else if is_keyword(parser_cursor, "#image(", true) {
                 card.slide_data.push(image_func(parser_cursor));
@@ -415,6 +440,7 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_ty
                 if parser_cursor.current().unwrap() == '\n'{ 
                     if parser_cursor.peek().unwrap() == '\n'{ break; }
                     if parser_cursor.peek().unwrap() == '#'{ break; }
+                    if parser_cursor.peek().unwrap() == '}'{ break; }
                     if parser_cursor.next() == None { break; };
                     value.push(' ');
                     continue; 
@@ -574,7 +600,11 @@ We can also change slide configurations for specific slides
 #font(family=\"Times\", size=32, style=\"bold\") We can change fonts!
 
 #slide
+#font(position=[122, 40]){
+Something, something
 
+ASDFAF
+}
 
 #slide
 We can even add images

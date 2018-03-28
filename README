@@ -7,7 +7,7 @@ ToDo:
   This is needed for a proof of concept:
 ========================================
 +add font to parser
-  ->multi lines
+  ->multi lines <= need to go on different lines
   ->margins
   ->font position should place a starting cursor such that center & right align work
 +load external fonts
