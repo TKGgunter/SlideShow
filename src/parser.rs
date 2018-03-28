@@ -117,17 +117,17 @@ pub enum ValueType{
 pub enum ConfigKwds{
     width,
     height,
-    pos_x,
-    pos_y,
     background_color,
+    align,
+    text,
     font,
     font_color,
     font_size,
     font_family,
-    align,
-    text,
+    font_position,
     image,
-    path,
+    image_path,
+    image_position,
     default,
 }
 
@@ -220,9 +220,8 @@ fn is_config(parser_cursor: &mut ParserCursor)->bool{
 
 fn image_func(parser_cursor: &mut ParserCursor)->SlideData{
     let config = gen_config_func(parser_cursor, 
-                                 &[("path", ConfigKwds::path, LexType::Str),
-                                 ("pos_x", ConfigKwds::pos_x, LexType::Num),
-                                 ("pos_y", ConfigKwds::pos_y, LexType::Num),],
+                                 &[("path", ConfigKwds::image_path, LexType::Str),
+                                 ("position", ConfigKwds::image_position, LexType::Arr),],
                                  "#image");
     parser_cursor.next();
     let slide_data = ValueType::Err; 
@@ -236,8 +235,7 @@ fn font_func(parser_cursor: &mut ParserCursor)->SlideData{
     let config = gen_config_func(parser_cursor, 
                                  &[("family", ConfigKwds::font_family, LexType::Str),
                                  ("size", ConfigKwds::font_size, LexType::Num),
-                                 ("pos_x", ConfigKwds::pos_x, LexType::Num),
-                                 ("pos_y", ConfigKwds::pos_y, LexType::Num),
+                                 ("position", ConfigKwds::font_position, LexType::Arr),
                                  ("color", ConfigKwds::font_color, LexType::Arr),
                                  ],
                                  "#font");
@@ -328,7 +326,13 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_ty
                     for num_char in ACC_NUM.iter(){
                         if parser_cursor.current().unwrap() == *num_char && good_number == false { good_number = true; }
                     }
-                    if good_number == true { value.push(parser_cursor.current().unwrap()); }
+                    if good_number == true { 
+                        value.push(parser_cursor.current().unwrap()); 
+                        if parser_cursor.peek().unwrap() == '.'{
+                            parser_cursor.next();
+                            value.push(parser_cursor.current().unwrap()); 
+                        }
+                    }
                     else {
 
                         let err_str = format!("Unexpected character: \"{}\", expected \"0-9\". Function gather_value line {} does not like.", parser_cursor.current().unwrap(), line!());
@@ -554,12 +558,12 @@ We can create a paragraph with consecutive \\n\\n.
 We can create a new line with #newline
 
 
-#slide(background_color= [0,160,0])
+#slide(background_color= [150,0,150])
 We can also change slide configurations for specific slides
 
 #slide
 #font(size=42) We can do different sized text
-#font(pos_x= 0.7, pos_y= 0.1, color=[0,0,150]) Place text where you want
+#font(position=[0.7, 0.1], color=[0,0,150]) Place text where you want
 #font(family=\"Times\", size=32, style=\"bold\") We can change fonts!
 
 #slide
@@ -568,7 +572,7 @@ We can also change slide configurations for specific slides
 #slide
 We can even add images
 #image(path=\"/some/path\")
-#image(path=\"/some/path\", pos_x=0.7, pos_y=0.1, width=0.8, hieght=0.8)
+#image(path=\"/some/path\", position=[0.7, 0.1], width=0.8, height=0.8)
 
 #slide
 #h1 We need to think about headers this is syntactic sugar

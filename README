@@ -2,13 +2,15 @@ Bugs:
 +Empty slide at the beginning of some slides. What is this about?
 
 ToDo:
-+add font (style, position) to parser
++add font (name, style, position) to parser
   ->How should pre and post #font positions work?
-  ->Explictly add fonts and font names
-+add images to parser
-+add post parser decoder to main
-+integrate latex tables and mathmatics rendering from an external python script
-+Add slide configure options font, font_size, font_color, ...
+  ->add fonts and font names => dynamic font array / hashmap
+  ->add default fonts 
++image resize
++better default image position
++default text margins
++integrate latex tables and mathmatics rendering from an external
++Add slide configure options default_font, font_size, font_color, ...
 +take input files
 +default slide style
 +div

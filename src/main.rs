@@ -99,6 +99,8 @@ fn set_settings( card: &ConfigCard,
                  font_size: &mut i64,
                  font_family: &mut [String; 2],
                  alignment: &mut Align,
+                 image_path: &mut String,
+                 image_position: &mut [f64;2],
                  ){
 
     for config_data in card.config_data.iter(){
@@ -166,7 +168,7 @@ fn set_settings( card: &ConfigCard,
 
             let mut temp_array = Vec::new();
             if let ValueType::Arr(ref array) = config_data.data{
-                for (it, element) in array.iter().enumerate(){
+                for element in array.iter(){
                     if let &ValueType::Str(ref string) = element{
                         temp_array.push(format!("{}", string));
                     }
@@ -175,6 +177,25 @@ fn set_settings( card: &ConfigCard,
             if temp_array.len() == 2{
                font_family[0] = format!("{}", temp_array[0]); 
                font_family[1] = format!("{}", temp_array[1]); 
+            }
+        }
+        else if config_data.kwd == ConfigKwds::image_path{
+            if let ValueType::Str(ref string) = config_data.data{
+                image_path.push_str(string);
+            }
+        }
+        else if config_data.kwd == ConfigKwds::image_position{
+            let mut temp_arr = Vec::new(); 
+            if let ValueType::Arr(ref array) = config_data.data{
+                for element in array.iter(){
+                    if let &ValueType::Num(ref num) = element{
+                        temp_arr.push(num + 0.0);
+                    }
+                }
+            }
+            if temp_arr.len() == 2{
+                image_position[0] = temp_arr[0];
+                image_position[1] = temp_arr[1];
             }
         }
         //END OF IFS//
@@ -213,14 +234,62 @@ impl SpecialText{
 }
 
 
+
+#[derive(Debug)]
+struct SpecialImage{ 
+    align:      Alignment,
+    position:   [f64;2],
+    dimensions: [f64;2],
+    path:       String,
+} 
+
+impl SpecialImage{
+    fn new()->SpecialImage{
+        SpecialImage{
+            align: Alignment::left,
+            position: [0.0f64;2],
+            dimensions: [-1.0f64;2],
+            path: String::new(),
+        }
+    }
+}
+
+
+fn load_image(sp_img: &SpecialImage)->ImageXObject{
+    let default_img = match image::open(&sp_img.path[..]){  Ok(img)=> img, 
+                                                Err(e)=>{println!("Error: image not found!");
+                                                         image::load_from_memory(DEFAULT_IMG).unwrap()}
+                                            };
+
+    let mut image_data = ImageXObject{
+        width: default_img.dimensions().0 as i64,
+        height: default_img.dimensions().1 as i64,
+        color_space: ColorSpace::Rgb,
+        bits_per_component: ColorBits::Bit8,
+        interpolate: true,
+        image_data: Vec::new(),
+        image_filter: None,
+        clipping_bbox: None,
+    };
+
+    for pixel in default_img.pixels(){
+        image_data.image_data.push( pixel.2[0] as u8);
+        image_data.image_data.push( pixel.2[1] as u8);
+        image_data.image_data.push( pixel.2[2] as u8);
+    }
+
+    image_data
+}
+
+
+
+static DEFAULT_IMG:   &'static [u8]  =  include_bytes!("linux_peng.png");
 static DEFAULT_FONTS:   [&str; 3]  =  ["times","helvetica", "Courier"];
-
-
 
 fn main() {
 
-    let default_font_path = "/home/gunter/Rust/Projects/SlideShow/assets/fonts/ofl/salsa/Salsa-Regular.ttf";
-    //let default_font_path = "/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf";
+    //let default_font_path = "/home/gunter/Rust/Projects/SlideShow/assets/fonts/ofl/salsa/Salsa-Regular.ttf";
+    let default_font_path = "/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf";
     let ft_lib = match freetype::Library::init(){ Ok(lib)=>{lib}, Err(e)=>{panic!("FreeType could not load: {:?}", e)}};
     let ft_default_face = match ft_lib.new_face(default_font_path, 0) { Ok(face) => {face}, Err(e) => {panic!("Ft face could not be loaded {:?}", e)}};
     
@@ -241,30 +310,11 @@ fn main() {
 
 
  ///////////////////////////////////////////////////
-    let default_img = image::open("/home/gunter/Rust/Projects/SlideShow/assets/linux_peng.png").unwrap();
-    //let default_img = image::open("/home/tgunter/Rust/SlideShow/assets/linux_peng.png").unwrap();
-
-    let mut image_data = ImageXObject{
-        width: default_img.dimensions().0 as i64,
-        height: default_img.dimensions().1 as i64,
-        color_space: ColorSpace::Rgb,
-        bits_per_component: ColorBits::Bit8,
-        interpolate: true,
-        image_data: Vec::new(),
-        image_filter: None,
-        clipping_bbox: None,
-    };
-
-    for pixel in default_img.pixels(){
-        image_data.image_data.push( pixel.2[0] as u8);
-        image_data.image_data.push( pixel.2[1] as u8);
-        image_data.image_data.push( pixel.2[2] as u8);
-    }
+    let image_data = load_image(&SpecialImage{ align: Alignment::default, 
+                                              position: [0.0, 0.0],
+                                              dimensions: [0.0, 0.0],
+                                              path: String::from("/home/gunter/Rust/Projects/SlideShow/assets/linux_peng.png")});
  ///////////////////////////////////////////////////
-    
-
-   
-
  
 
     let document = example();
@@ -273,6 +323,10 @@ fn main() {
         println!("{:?}\n\n", card);
     }
 
+
+
+
+    //Load default default dimension settings
     if document.len() > 0{
         if let Card::ConfigCard(ref card) = document[0]{
             for config_data in card.config_data.iter(){
@@ -291,33 +345,46 @@ fn main() {
     }
 
 
+    
+    //Setting up Pdf document
     let (doc, page1, layer1) = PdfDocument::new("PDF_Document_title", dimensions.0, dimensions.1, "Layer 1");
     let font = doc.add_external_font(default_font_data).unwrap();
     let mut current_layer = doc.get_page(page1).get_layer(layer1);
     let mut add_new_slide = true;
 
 
+
     for i in 0..document.len(){
     
+        ///////////
+        //Default setting for the document as determined by the user
         if let Card::ConfigCard(ref card) = document[i] {
-
             add_new_slide = false;
-            //println!("{:?}", card);
 
             let mut temp_font_family = [String::new(), String::new()];
+            let mut temp_image_path = String::new();
+            let mut temp_image_pos = [0.0, 0.0];
             set_settings(card,  &mut dimensions, 
                                 &mut default_slide_color,
                                 &mut default_font_color, 
                                 &mut default_font_size, 
                                 &mut temp_font_family, 
-                                &mut default_alignment);
+                                &mut default_alignment,
+                                &mut temp_image_path,
+                                &mut temp_image_pos,
+                                );
         };
 
         let mut text_arr = Vec::<SpecialText>::new();
+        let mut img_arr = Vec::<SpecialImage>::new();
 
+
+        
         if let Card::SlideCard(ref slide) = document[i]{
             add_new_slide = true;
-
+            
+            ///////////
+            //Modified settings for a particular slide
             if let Some(ref config) = slide.config {
 
                 let mut temp_dimensions = (-1.0, -1.0);
@@ -326,28 +393,35 @@ fn main() {
                 let mut temp_font_family = [String::new(), String::new()];
                 let mut temp_font_size = -1; 
                 let mut temp_alignment = Align{data: Alignment::right}; 
+                let mut temp_image_path = String::new();
+                let mut temp_image_pos = [0.0, 0.0];
 
                 set_settings(config, &mut temp_dimensions,
                              &mut temp_slide_color,
                              &mut temp_font_color,
                              &mut temp_font_size,
                              &mut temp_font_family,
-                             &mut temp_alignment);
+                             &mut temp_alignment,
+                             &mut temp_image_path,
+                             &mut temp_image_pos,
+                             );
 
-                //ToDo: Need to add everything else
+                //ToDo: Need to add everything else ... What is everything else?
                 if temp_slide_color[0] != -1.0{
                     some_slide_color = Some(temp_slide_color);
                 }
             };  
 
+
             for element in slide.slide_data.iter(){
-
-
                 let mut temp_text = SpecialText{ align: Alignment::default, 
                                                 font_size: -1, 
                                                 position: [-1.0, -1.0], 
                                                 font_color: [-1.0, -1.0, -1.0], 
                                                 string: String::new()};
+
+                ///////////////
+                //Load special text, images and other
                 if let Some(ref config) = element.config{
                     let mut temp_dimensions = (-1.0, -1.0);
                     let mut temp_slide_color = [-1.0, -1.0, -1.0];
@@ -355,17 +429,29 @@ fn main() {
                     let mut temp_font_family = [String::new(), String::new()];
                     let mut temp_font_size = -1; 
                     let mut temp_alignment = Align{data: Alignment::right}; 
+                    let mut temp_image_path = String::new();
+                    let mut temp_image_pos = [0.0, 0.0];
 
                     set_settings(config, &mut temp_dimensions,
                                  &mut temp_slide_color,
                                  &mut temp_font_color,
                                  &mut temp_font_size,
                                  &mut temp_font_family,
-                                 &mut temp_alignment);
+                                 &mut temp_alignment,
+                                 &mut temp_image_path,
+                                 &mut temp_image_pos,
+                                 );
 
                     temp_text.align = temp_alignment.data;
                     temp_text.font_size = temp_font_size;
                     temp_text.font_color = temp_font_color;
+                    
+                    if temp_image_path != ""{
+                        let mut temp_image = SpecialImage::new();
+                        temp_image.path = temp_image_path;
+                        temp_image.position = temp_image_pos;
+                        img_arr.push(temp_image);
+                    }
                 }
 
 
@@ -441,7 +527,6 @@ fn main() {
 
         for (it, text_ele) in text_arr.iter_mut().enumerate(){
 
-
             if text_ele.align == Alignment::default {text_ele.align = default_alignment.data;}
             if text_ele.font_size == -1         {text_ele.font_size = default_font_size;}
             if text_ele.font_color[0] == -1.0   {text_ele.font_color = default_font_color;}
@@ -462,9 +547,23 @@ fn main() {
             else if text_ele.align == Alignment::center{
                 render_centered_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, &font);
             }
-
-
         }
+
+        for (it, img_ele) in img_arr.iter().enumerate(){
+            let temp_img = load_image(&img_ele);
+
+            let mut img_position_x = img_ele.position[0];
+            let mut img_position_y = img_ele.position[1];
+            if img_ele.position[0] < 1.0 && img_ele.position[1] < 1.0{
+                img_position_x *= dimensions.0;
+                img_position_y *= dimensions.1;
+            }
+            Image::from(temp_img).add_to_layer(current_layer.clone(), Some(img_position_x),
+                                                                       Some(img_position_y),
+                                                                       None,None,None,None);
+        }
+
+
         if add_new_slide{
             let (page_n, layer1) = doc.add_page(dimensions.0, dimensions.1,"Page 2, Layer 1");
             current_layer = doc.get_page(page_n).get_layer(layer1);
