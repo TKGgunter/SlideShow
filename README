@@ -1,18 +1,30 @@
 Bugs:
-+Empty slide at the beginning of some slides. What is this about?
++Extra slide at the very end. Why?
++New line at the beginning of some slides. What is this about?
 
 ToDo:
+========================================
+  This is needed for a proof of concept:
+========================================
 +add font (name, style, position) to parser
-  ->How should pre and post #font positions work?
-  ->add fonts and font names => dynamic font array / hashmap
-  ->add default fonts 
-+image resize
-+better default image position
-+default text margins
-+integrate latex tables and mathmatics rendering from an external
-+Add slide configure options default_font, font_size, font_color, ...
+  ->margins and multi lines
++text margins
 +take input files
++Add slide configure options default_font, font_size, font_color
+========================================
+
+========================================
+  Shortly after proof of concept:
+========================================
++Default text vertical center
++Inline #font
++image alpha channel integrations
++integrate latex tables and mathmatics rendering from an external
 +default slide style
++better default image position
++Add custom default image
+========================================
+
 +div
   -> Get everything working inside divs
 +Better errors statements
@@ -22,12 +34,16 @@ ToDo:
 +new paragraph vs newline <= Mar 24 they are the same
 
 
-
-Things to think about
+======================
+======================
+Things to think about:
++When do we try for feed back. I need to know if things are going in the right direction.
+  ->What's needed to get feed back? Image resize, default text margins, 
 +figure out the best way to work with pdf library, do we want lots of layers?(Background layer, text layer, image layer)
-+Figure out how to use fonts built into the lib.
 +bullet points character code
 +test footers and headers
+======================
+======================
 
 
 

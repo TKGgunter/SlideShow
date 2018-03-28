@@ -125,9 +125,12 @@ pub enum ConfigKwds{
     font_size,
     font_family,
     font_position,
+    font_style,
     image,
     image_path,
     image_position,
+    image_width,
+    image_height,
     default,
 }
 
@@ -221,7 +224,10 @@ fn is_config(parser_cursor: &mut ParserCursor)->bool{
 fn image_func(parser_cursor: &mut ParserCursor)->SlideData{
     let config = gen_config_func(parser_cursor, 
                                  &[("path", ConfigKwds::image_path, LexType::Str),
-                                 ("position", ConfigKwds::image_position, LexType::Arr),],
+                                 ("position", ConfigKwds::image_position, LexType::Arr),
+                                 ("width", ConfigKwds::image_width, LexType::Num),
+                                 ("height", ConfigKwds::image_height, LexType::Num),
+],
                                  "#image");
     parser_cursor.next();
     let slide_data = ValueType::Err; 
@@ -237,6 +243,7 @@ fn font_func(parser_cursor: &mut ParserCursor)->SlideData{
                                  ("size", ConfigKwds::font_size, LexType::Num),
                                  ("position", ConfigKwds::font_position, LexType::Arr),
                                  ("color", ConfigKwds::font_color, LexType::Arr),
+                                 ("style", ConfigKwds::font_style, LexType::Str),
                                  ],
                                  "#font");
     parser_cursor.next();
@@ -563,7 +570,7 @@ We can also change slide configurations for specific slides
 
 #slide
 #font(size=42) We can do different sized text
-#font(position=[0.7, 0.1], color=[0,0,150]) Place text where you want
+#font(position=[0.3, 0.5], color=[0,0,150]) Place text where you want
 #font(family=\"Times\", size=32, style=\"bold\") We can change fonts!
 
 #slide
@@ -602,13 +609,6 @@ We can even add images
         }
         if parser_cursor.peek() == None{break;} 
     }
-/*
-    for card in document_structure.iter(){
-        //This should be written to some file
-        println!("{:?}", card);
-        println!("");
-    }
-*/
     document_structure
 }
 

@@ -6,9 +6,10 @@ extern crate image;
 use printpdf::*;
 use std::fs::File;
 use std::io::BufWriter;
+use std::collections::HashMap;
+
 
 use image::GenericImage;
-
 
 
 mod parser;
@@ -18,9 +19,6 @@ use parser::{Card, ConfigCard, SlideCard, ConfigKwds, ValueType, example};
 
 static PT_MM : f64 = 0.352778;
 static PX_MM : f64 = 0.02 * 25.4;
-
-
-
 /// Calculates the lower left of a centered string, to position it correctly in the document
 /// 
 /// Parameters:
@@ -30,7 +28,7 @@ static PX_MM : f64 = 0.02 * 25.4;
 /// - parent_width: the width of the element in which relation the text should be centered
 /// - font_face: The font-face of the text
 /// From printpdf author 
-
+/// Slight alterations by Thoth Gunter
 pub fn calc_lower_left_for_centered_text(text: &String, font_scale: i64, parent_width: f64, font_face: &freetype::Face)
 -> f64
 {
@@ -85,6 +83,10 @@ fn render_right_aligned_text( current_layer: &PdfLayerReference, text: &String, 
     current_layer.use_text(&text[..], font_scale, centered, y_mm, font);
   
 }
+///  END
+/// 
+/// 
+/// 
 
 
 
@@ -98,9 +100,12 @@ fn set_settings( card: &ConfigCard,
                  font_color: &mut [f64;3],
                  font_size: &mut i64,
                  font_family: &mut [String; 2],
+                 font_position: &mut [f64; 2],
                  alignment: &mut Align,
                  image_path: &mut String,
                  image_position: &mut [f64;2],
+                 image_width: &mut f64,
+                 image_height: &mut f64,
                  ){
 
     for config_data in card.config_data.iter(){
@@ -198,6 +203,32 @@ fn set_settings( card: &ConfigCard,
                 image_position[1] = temp_arr[1];
             }
         }
+        else if config_data.kwd == ConfigKwds::image_width{
+
+             if let ValueType::Num(ref num) = config_data.data{
+                 *image_width = num + 0.0; 
+             }
+        }
+        else if config_data.kwd == ConfigKwds::image_height{
+
+             if let ValueType::Num(ref num) = config_data.data{
+                 *image_height = num + 0.0; 
+             }
+        }
+        else if config_data.kwd == ConfigKwds::font_position{
+            let mut temp_arr = Vec::new(); 
+            if let ValueType::Arr(ref array) = config_data.data{
+                for element in array.iter(){
+                    if let &ValueType::Num(ref num) = element{
+                        temp_arr.push(num + 0.0);
+                    }
+                }
+            }
+            if temp_arr.len() == 2{
+                font_position[0] = temp_arr[0];
+                font_position[1] = temp_arr[1];
+            }
+        }
         //END OF IFS//
     }
 }
@@ -283,24 +314,28 @@ fn load_image(sp_img: &SpecialImage)->ImageXObject{
 
 
 
-static DEFAULT_IMG:   &'static [u8]  =  include_bytes!("linux_peng.png");
-static DEFAULT_FONTS:   [&str; 3]  =  ["times","helvetica", "Courier"];
+static DEFAULT_IMG:   &'static [u8]         =  include_bytes!("linux_peng.png");
+static DEFAULT_FONTS: [&str; 3]             =  ["times","helvetica", "Courier"];
+static FONT_TIMES:    &'static [u8]         =  include_bytes!("FreeSerif/FreeSerif.ttf");
+static FONT_TIMES_BOLD:      &'static [u8]  =  include_bytes!("FreeSerif/FreeSerifBold.ttf");
+static FONT_TIMES_ITALIC:   &'static [u8]  =  include_bytes!("FreeSerif/FreeSerifItalic.ttf");
+static FONT_TIMES_BOLDITALIC: &'static [u8] =  include_bytes!("FreeSerif/FreeSerifBoldItalic.ttf");
 
 fn main() {
 
-    //let default_font_path = "/home/gunter/Rust/Projects/SlideShow/assets/fonts/ofl/salsa/Salsa-Regular.ttf";
-    let default_font_path = "/home/tgunter/Rust/SlideShow/assets/Roboto-Medium.ttf";
     let ft_lib = match freetype::Library::init(){ Ok(lib)=>{lib}, Err(e)=>{panic!("FreeType could not load: {:?}", e)}};
-    let ft_default_face = match ft_lib.new_face(default_font_path, 0) { Ok(face) => {face}, Err(e) => {panic!("Ft face could not be loaded {:?}", e)}};
-    
+    let ft_default_face = match ft_lib.new_memory_face(FONT_TIMES, 0) { Ok(face) => {face}, Err(e) => {panic!("Ft face could not be loaded {:?}", e)}};
+
+
     //DEFAULT SETINGS
     //16:9
     let mut dimensions = (338.7,190.5);
-    let default_font_data = File::open(default_font_path).unwrap();
     let mut default_slide_color = [256.0, 256.0, 256.0];
+    let mut default_font_family = "times";
     let mut default_font_color = [0.0, 0.0, 0.0];
+    let mut default_font_position = [20.0, 0.0];
     let mut default_font_size : i64 = 16; 
-    let mut default_alignment = Align{data: Alignment::right}; 
+    let mut default_alignment = Align{data: Alignment::left}; 
 
     let mut some_slide_color : Option<[f64; 3]> = None;
     let mut some_font_color  : Option<[f64; 3]> = None;
@@ -320,7 +355,7 @@ fn main() {
     let document = example();
     println!("CARD GENERATION COMPLETE.\n\nSTARTING PDF GENERATION");
     for card in document.iter(){
-        println!("{:?}\n\n", card);
+        //println!("{:?}\n\n", card);
     }
 
 
@@ -348,10 +383,15 @@ fn main() {
     
     //Setting up Pdf document
     let (doc, page1, layer1) = PdfDocument::new("PDF_Document_title", dimensions.0, dimensions.1, "Layer 1");
-    let font = doc.add_external_font(default_font_data).unwrap();
+    let font = doc.add_external_font(FONT_TIMES).unwrap();
     let mut current_layer = doc.get_page(page1).get_layer(layer1);
     let mut add_new_slide = true;
 
+    let mut font_book = HashMap::new();    
+    font_book.insert("times",             doc.add_external_font(FONT_TIMES).unwrap());
+    font_book.insert("times_bold",        doc.add_external_font(FONT_TIMES_BOLD).unwrap());
+    font_book.insert("times_italic",      doc.add_external_font(FONT_TIMES_ITALIC).unwrap() );
+    font_book.insert("times_bolditalic",  doc.add_external_font(FONT_TIMES_BOLDITALIC).unwrap());
 
 
     for i in 0..document.len(){
@@ -362,16 +402,22 @@ fn main() {
             add_new_slide = false;
 
             let mut temp_font_family = [String::new(), String::new()];
+            let mut temp_font_pos = [-1.0, -1.0];
             let mut temp_image_path = String::new();
             let mut temp_image_pos = [0.0, 0.0];
+            let mut temp_image_width = 0.0;
+            let mut temp_image_height = 0.0;
             set_settings(card,  &mut dimensions, 
                                 &mut default_slide_color,
                                 &mut default_font_color, 
                                 &mut default_font_size, 
                                 &mut temp_font_family, 
+                                &mut temp_font_pos, 
                                 &mut default_alignment,
                                 &mut temp_image_path,
                                 &mut temp_image_pos,
+                                &mut temp_image_width,
+                                &mut temp_image_height,
                                 );
         };
 
@@ -392,18 +438,24 @@ fn main() {
                 let mut temp_font_color = [-1.0, -1.0, -1.0];
                 let mut temp_font_family = [String::new(), String::new()];
                 let mut temp_font_size = -1; 
-                let mut temp_alignment = Align{data: Alignment::right}; 
+                let mut temp_font_pos = [-1.0, -1.0];
+                let mut temp_alignment = Align{data: Alignment::left}; 
                 let mut temp_image_path = String::new();
                 let mut temp_image_pos = [0.0, 0.0];
+                let mut temp_image_width = 0.0;
+                let mut temp_image_height = 0.0;
 
                 set_settings(config, &mut temp_dimensions,
                              &mut temp_slide_color,
                              &mut temp_font_color,
                              &mut temp_font_size,
                              &mut temp_font_family,
+                             &mut temp_font_pos,
                              &mut temp_alignment,
                              &mut temp_image_path,
                              &mut temp_image_pos,
+                             &mut temp_image_width,
+                             &mut temp_image_height,
                              );
 
                 //ToDo: Need to add everything else ... What is everything else?
@@ -427,29 +479,38 @@ fn main() {
                     let mut temp_slide_color = [-1.0, -1.0, -1.0];
                     let mut temp_font_color = [-1.0, -1.0, -1.0];
                     let mut temp_font_family = [String::new(), String::new()];
+                    let mut temp_font_pos = [-1.0, -1.0];
                     let mut temp_font_size = -1; 
-                    let mut temp_alignment = Align{data: Alignment::right}; 
+                    let mut temp_alignment = Align{data: Alignment::left}; 
                     let mut temp_image_path = String::new();
                     let mut temp_image_pos = [0.0, 0.0];
+                    let mut temp_image_width = 0.0;
+                    let mut temp_image_height = 0.0;
 
                     set_settings(config, &mut temp_dimensions,
                                  &mut temp_slide_color,
                                  &mut temp_font_color,
                                  &mut temp_font_size,
                                  &mut temp_font_family,
+                                 &mut temp_font_pos,
                                  &mut temp_alignment,
                                  &mut temp_image_path,
                                  &mut temp_image_pos,
+                                 &mut temp_image_width,
+                                 &mut temp_image_height,
                                  );
 
                     temp_text.align = temp_alignment.data;
                     temp_text.font_size = temp_font_size;
                     temp_text.font_color = temp_font_color;
+                    temp_text.position = temp_font_pos;
                     
                     if temp_image_path != ""{
                         let mut temp_image = SpecialImage::new();
                         temp_image.path = temp_image_path;
                         temp_image.position = temp_image_pos;
+                        temp_image.dimensions[0] = temp_image_width;
+                        temp_image.dimensions[1] = temp_image_height;
                         img_arr.push(temp_image);
                     }
                 }
@@ -499,7 +560,6 @@ fn main() {
                 ///////////////////
             }
         };
-        println!("{:?}", text_arr);
 
         ////////////////////////////////////////////////
         //Background_color
@@ -526,11 +586,17 @@ fn main() {
 
 
         for (it, text_ele) in text_arr.iter_mut().enumerate(){
+            default_font_position = [20.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64)];
 
             if text_ele.align == Alignment::default {text_ele.align = default_alignment.data;}
-            if text_ele.font_size == -1         {text_ele.font_size = default_font_size;}
-            if text_ele.font_color[0] == -1.0   {text_ele.font_color = default_font_color;}
+            if text_ele.font_size <= -1         {text_ele.font_size = default_font_size;}
+            if text_ele.font_color[0] <= -1.0 || text_ele.font_color[1] <= -1.0 || text_ele.font_color[2] <= -1.0   {text_ele.font_color = default_font_color;}
+            if text_ele.position[0] <= -1.0 || text_ele.position[1] <= -1.0 {text_ele.position = default_font_position;}
 
+            if text_ele.position[0] < 1.0 && text_ele.position[1] < 1.0{
+                text_ele.position[0] = text_ele.position[0] * dimensions.0;
+                text_ele.position[1] = text_ele.position[1] * dimensions.1;
+            }
 
             fill_color = Color::Rgb(Rgb::new(text_ele.font_color[0] / 256.0,
                                              text_ele.font_color[1] / 256.0,
@@ -539,13 +605,13 @@ fn main() {
             
             //Render default text
             if text_ele.align == Alignment::left{
-                current_layer.use_text(&text_ele.string[..], text_ele.font_size, 20.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &font);
+                current_layer.use_text(&text_ele.string[..], text_ele.font_size, text_ele.position[0], text_ele.position[1], font_book.get(default_font_family).unwrap());
             }
             else if text_ele.align == Alignment::right{
-                render_right_aligned_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, &font);
+                render_right_aligned_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, font_book.get(default_font_family).unwrap());
             }
             else if text_ele.align == Alignment::center{
-                render_centered_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, &font);
+                render_centered_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, font_book.get(default_font_family).unwrap());
             }
         }
 
@@ -558,9 +624,29 @@ fn main() {
                 img_position_x *= dimensions.0;
                 img_position_y *= dimensions.1;
             }
+            
+            let mut img_width  : Option<f64> = None;
+            let mut img_height : Option<f64> = None;
+            if img_ele.dimensions[0] > 0.0 {
+                if img_ele.dimensions[0] > 1.0{
+                    img_width = Some(img_ele.dimensions[0] / temp_img.width as f64);
+                }
+                else{
+                    img_width = Some(img_ele.dimensions[0]);
+                }
+            }
+            if img_ele.dimensions[1] > 0.0 {
+                if img_ele.dimensions[1] > 1.0{
+                    img_height = Some(img_ele.dimensions[1] / temp_img.height as f64);
+                }
+                else{
+                    img_height = Some(img_ele.dimensions[1]);
+                }
+            }
             Image::from(temp_img).add_to_layer(current_layer.clone(), Some(img_position_x),
-                                                                       Some(img_position_y),
-                                                                       None,None,None,None);
+                                                                      Some(img_position_y),
+                                                                      None,
+                                                                      img_width, img_height,None);
         }
 
 
@@ -572,9 +658,8 @@ fn main() {
 
 
     //Testing area
-    Image::from(image_data).add_to_layer(current_layer.clone(), Some(100.0), Some(100.0), None, None, None, None); //Defauct
-    let b_font = doc.add_builtin_font(BuiltinFont::TimesRoman).unwrap();
-    current_layer.use_text("Something...", 32, 10.0, 10.0, &b_font);
+    Image::from(image_data).add_to_layer(current_layer.clone(), Some(100.0), Some(100.0), None, Some(0.5), Some(0.5), None); //Defauct
+    current_layer.use_text("ASDFADFAD", 32, 20.0, 20.0, font_book.get("times").unwrap());
     //
 
 
