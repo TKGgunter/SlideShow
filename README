@@ -6,12 +6,18 @@ ToDo:
 ========================================
   This is needed for a proof of concept:
 ========================================
-+add font (name, style, position) to parser
-  ->margins and multi lines
++add font to parser
+  ->multi lines
+  ->margins
+  ->font position should place a starting cursor such that center & right align work
++load external fonts
 +text margins
++decent default slide style
 +take input files
-+Add slide configure options default_font, font_size, font_color
++Add slide configure options default_font_family, font_size, font_color
 ========================================
+
+TEST with a few simple slides
 
 ========================================
   Shortly after proof of concept:
@@ -23,6 +29,7 @@ ToDo:
 +default slide style
 +better default image position
 +Add custom default image
++percentage / Mm consistancy
 ========================================
 
 +div

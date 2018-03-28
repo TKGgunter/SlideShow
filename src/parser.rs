@@ -123,7 +123,7 @@ pub enum ConfigKwds{
     font,
     font_color,
     font_size,
-    font_family,
+    font_current,
     font_position,
     font_style,
     image,
@@ -239,7 +239,7 @@ fn image_func(parser_cursor: &mut ParserCursor)->SlideData{
 
 fn font_func(parser_cursor: &mut ParserCursor)->SlideData{
     let config = gen_config_func(parser_cursor, 
-                                 &[("family", ConfigKwds::font_family, LexType::Str),
+                                 &[("family", ConfigKwds::font_current, LexType::Str),
                                  ("size", ConfigKwds::font_size, LexType::Num),
                                  ("position", ConfigKwds::font_position, LexType::Arr),
                                  ("color", ConfigKwds::font_color, LexType::Arr),
@@ -570,7 +570,7 @@ We can also change slide configurations for specific slides
 
 #slide
 #font(size=42) We can do different sized text
-#font(position=[0.3, 0.5], color=[0,0,150]) Place text where you want
+#font(position=[0.3, 0.5], color=[200,50,50]) Place text where you want
 #font(family=\"Times\", size=32, style=\"bold\") We can change fonts!
 
 #slide

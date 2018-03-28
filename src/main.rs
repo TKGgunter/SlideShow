@@ -100,6 +100,8 @@ fn set_settings( card: &ConfigCard,
                  font_color: &mut [f64;3],
                  font_size: &mut i64,
                  font_family: &mut [String; 2],
+                 font_current: &mut String,
+                 font_style: &mut String,
                  font_position: &mut [f64; 2],
                  alignment: &mut Align,
                  image_path: &mut String,
@@ -229,6 +231,20 @@ fn set_settings( card: &ConfigCard,
                 font_position[1] = temp_arr[1];
             }
         }
+        else if config_data.kwd == ConfigKwds::font_current{
+            let mut temp_str = String::new(); 
+            if let ValueType::Str(ref s) = config_data.data{
+                temp_str = s.to_lowercase();
+            }
+            *font_current = temp_str;
+        }
+        else if config_data.kwd == ConfigKwds::font_style{
+            let mut temp_str = String::new(); 
+            if let ValueType::Str(ref s) = config_data.data{
+                temp_str = s.to_lowercase();
+            }
+            *font_style = temp_str;
+        }
         //END OF IFS//
     }
 }
@@ -251,6 +267,7 @@ struct SpecialText{
     font_size:  i64,
     position:   [f64;2],
     font_color: [f64;3],
+    font:       String,
     string:     String,
 } 
 
@@ -260,6 +277,7 @@ impl SpecialText{
                     font_size: -1, 
                     position: [-1.0, -1.0], 
                     font_color: [-1.0, -1.0, -1.0], 
+                    font: String::new(),
                     string: String::new(),}
     }
 }
@@ -402,6 +420,8 @@ fn main() {
             add_new_slide = false;
 
             let mut temp_font_family = [String::new(), String::new()];
+            let mut temp_font_current = String::new();
+            let mut temp_font_style = String::new();
             let mut temp_font_pos = [-1.0, -1.0];
             let mut temp_image_path = String::new();
             let mut temp_image_pos = [0.0, 0.0];
@@ -412,6 +432,8 @@ fn main() {
                                 &mut default_font_color, 
                                 &mut default_font_size, 
                                 &mut temp_font_family, 
+                                &mut temp_font_current, 
+                                &mut temp_font_style, 
                                 &mut temp_font_pos, 
                                 &mut default_alignment,
                                 &mut temp_image_path,
@@ -437,6 +459,8 @@ fn main() {
                 let mut temp_slide_color = [-1.0, -1.0, -1.0];
                 let mut temp_font_color = [-1.0, -1.0, -1.0];
                 let mut temp_font_family = [String::new(), String::new()];
+                let mut temp_font_current = String::new();
+                let mut temp_font_style = String::new();
                 let mut temp_font_size = -1; 
                 let mut temp_font_pos = [-1.0, -1.0];
                 let mut temp_alignment = Align{data: Alignment::left}; 
@@ -450,6 +474,8 @@ fn main() {
                              &mut temp_font_color,
                              &mut temp_font_size,
                              &mut temp_font_family,
+                             &mut temp_font_current,
+                             &mut temp_font_style,
                              &mut temp_font_pos,
                              &mut temp_alignment,
                              &mut temp_image_path,
@@ -470,6 +496,7 @@ fn main() {
                                                 font_size: -1, 
                                                 position: [-1.0, -1.0], 
                                                 font_color: [-1.0, -1.0, -1.0], 
+                                                font: String::new(),
                                                 string: String::new()};
 
                 ///////////////
@@ -479,6 +506,8 @@ fn main() {
                     let mut temp_slide_color = [-1.0, -1.0, -1.0];
                     let mut temp_font_color = [-1.0, -1.0, -1.0];
                     let mut temp_font_family = [String::new(), String::new()];
+                    let mut temp_font_current = String::new();
+                    let mut temp_font_style = String::new();
                     let mut temp_font_pos = [-1.0, -1.0];
                     let mut temp_font_size = -1; 
                     let mut temp_alignment = Align{data: Alignment::left}; 
@@ -492,6 +521,8 @@ fn main() {
                                  &mut temp_font_color,
                                  &mut temp_font_size,
                                  &mut temp_font_family,
+                                 &mut temp_font_current,
+                                 &mut temp_font_style,
                                  &mut temp_font_pos,
                                  &mut temp_alignment,
                                  &mut temp_image_path,
@@ -504,7 +535,11 @@ fn main() {
                     temp_text.font_size = temp_font_size;
                     temp_text.font_color = temp_font_color;
                     temp_text.position = temp_font_pos;
-                    
+                    temp_text.font = temp_font_current;
+                    if temp_font_style != ""{
+                        temp_text.font.push_str("_");
+                        temp_text.font.push_str(&temp_font_style[..]);
+                    } 
                     if temp_image_path != ""{
                         let mut temp_image = SpecialImage::new();
                         temp_image.path = temp_image_path;
@@ -537,6 +572,7 @@ fn main() {
                                                                     font_size: temp_text.font_size,
                                                                     position: temp_text.position,
                                                                     font_color: temp_text.font_color,
+                                                                    font: String::from(&temp_text.font[..]),
                                                                     string: temp_temp_str};
                                     text_arr.push(return_text);
                                     break;
@@ -549,6 +585,7 @@ fn main() {
                                                                     font_size: temp_text.font_size,
                                                                     position: temp_text.position,
                                                                     font_color: temp_text.font_color,
+                                                                    font: String::from(&temp_text.font[..]),
                                                                     string: temp_temp_str};
                                     text_arr.push(return_text);
                                     temp_string = String::new();
@@ -602,16 +639,26 @@ fn main() {
                                              text_ele.font_color[1] / 256.0,
                                              text_ele.font_color[2] / 256.0, None));
             current_layer.set_fill_color(fill_color);
-            
+           
+            let mut current_font = default_font_family; 
+            if font_book.contains_key(&text_ele.font[..]){
+                current_font = &text_ele.font;
+            }
+            else{
+                if text_ele.font != ""{
+                    println!("Error: font {} not found.", text_ele.font);
+                }
+            }
+
             //Render default text
             if text_ele.align == Alignment::left{
-                current_layer.use_text(&text_ele.string[..], text_ele.font_size, text_ele.position[0], text_ele.position[1], font_book.get(default_font_family).unwrap());
+                current_layer.use_text(&text_ele.string[..], text_ele.font_size, text_ele.position[0], text_ele.position[1], font_book.get(current_font).unwrap());
             }
             else if text_ele.align == Alignment::right{
-                render_right_aligned_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, font_book.get(default_font_family).unwrap());
+                render_right_aligned_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, font_book.get(current_font).unwrap());
             }
             else if text_ele.align == Alignment::center{
-                render_centered_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, font_book.get(default_font_family).unwrap());
+                render_centered_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, font_book.get(current_font).unwrap());
             }
         }
 
