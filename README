@@ -7,7 +7,6 @@ ToDo:
   This is needed for a proof of concept:
 ========================================
 +add font to parser
-  ->multi lines <= need to go on different lines
   ->margins
   ->font position should place a starting cursor such that center & right align work
 +load external fonts
@@ -22,13 +21,14 @@ TEST with a few simple slides
 ========================================
   Shortly after proof of concept:
 ========================================
++Add custom default image
++integrate latex tables and mathmatics rendering from an external
 +Default text vertical center
++Default font position
 +Inline #font
 +image alpha channel integrations
-+integrate latex tables and mathmatics rendering from an external
 +default slide style
 +better default image position
-+Add custom default image
 +percentage / Mm consistancy
 ========================================
 

@@ -103,6 +103,7 @@ fn set_settings( card: &ConfigCard,
                  font_current: &mut String,
                  font_style: &mut String,
                  font_position: &mut [f64; 2],
+                 font_nth: &mut i64,
                  alignment: &mut Align,
                  image_path: &mut String,
                  image_position: &mut [f64;2],
@@ -245,6 +246,11 @@ fn set_settings( card: &ConfigCard,
             }
             *font_style = temp_str;
         }
+        else if config_data.kwd == ConfigKwds::font_nth{
+            if let ValueType::Num(ref n) = config_data.data{
+                *font_nth = n.clone() as i64;
+            }
+        }
         //END OF IFS//
     }
 }
@@ -264,6 +270,7 @@ struct Align{ data: Alignment}
 #[derive(Debug)]
 struct SpecialText{ 
     align:      Alignment,
+    nth:        i64,
     font_size:  i64,
     position:   [f64;2],
     font_color: [f64;3],
@@ -274,6 +281,7 @@ struct SpecialText{
 impl SpecialText{
     fn default()->SpecialText{
         SpecialText{align: Alignment::default, 
+                    nth: 0, 
                     font_size: -1, 
                     position: [-1.0, -1.0], 
                     font_color: [-1.0, -1.0, -1.0], 
@@ -423,6 +431,7 @@ fn main() {
             let mut temp_font_current = String::new();
             let mut temp_font_style = String::new();
             let mut temp_font_pos = [-1.0, -1.0];
+            let mut temp_font_nth = -1;
             let mut temp_image_path = String::new();
             let mut temp_image_pos = [0.0, 0.0];
             let mut temp_image_width = 0.0;
@@ -435,6 +444,7 @@ fn main() {
                                 &mut temp_font_current, 
                                 &mut temp_font_style, 
                                 &mut temp_font_pos, 
+                                &mut temp_font_nth, 
                                 &mut default_alignment,
                                 &mut temp_image_path,
                                 &mut temp_image_pos,
@@ -463,6 +473,7 @@ fn main() {
                 let mut temp_font_style = String::new();
                 let mut temp_font_size = -1; 
                 let mut temp_font_pos = [-1.0, -1.0];
+                let mut temp_font_nth = -1;
                 let mut temp_alignment = Align{data: Alignment::left}; 
                 let mut temp_image_path = String::new();
                 let mut temp_image_pos = [0.0, 0.0];
@@ -477,6 +488,7 @@ fn main() {
                              &mut temp_font_current,
                              &mut temp_font_style,
                              &mut temp_font_pos,
+                             &mut temp_font_nth,
                              &mut temp_alignment,
                              &mut temp_image_path,
                              &mut temp_image_pos,
@@ -490,15 +502,11 @@ fn main() {
                 }
             };  
 
-
+            let mut nth_text = 0; //I need a better name for this...
             for element in slide.slide_data.iter(){
-                let mut temp_text = SpecialText{ align: Alignment::default, 
-                                                font_size: -1, 
-                                                position: [-1.0, -1.0], 
-                                                font_color: [-1.0, -1.0, -1.0], 
-                                                font: String::new(),
-                                                string: String::new()};
-
+                let mut temp_text = SpecialText::default();
+                temp_text.nth = nth_text.clone();
+                
                 ///////////////
                 //Load special text, images and other
                 if let Some(ref config) = element.config{
@@ -509,6 +517,7 @@ fn main() {
                     let mut temp_font_current = String::new();
                     let mut temp_font_style = String::new();
                     let mut temp_font_pos = [-1.0, -1.0];
+                    let mut temp_font_nth = -1;
                     let mut temp_font_size = -1; 
                     let mut temp_alignment = Align{data: Alignment::left}; 
                     let mut temp_image_path = String::new();
@@ -524,6 +533,7 @@ fn main() {
                                  &mut temp_font_current,
                                  &mut temp_font_style,
                                  &mut temp_font_pos,
+                                 &mut temp_font_nth,
                                  &mut temp_alignment,
                                  &mut temp_image_path,
                                  &mut temp_image_pos,
@@ -536,6 +546,7 @@ fn main() {
                     temp_text.font_color = temp_font_color;
                     temp_text.position = temp_font_pos;
                     temp_text.font = temp_font_current;
+                    temp_text.nth = temp_font_nth;
                     if temp_font_style != ""{
                         temp_text.font.push_str("_");
                         temp_text.font.push_str(&temp_font_style[..]);
@@ -555,6 +566,7 @@ fn main() {
                     if calc_text_width_pt(&string.to_string(), temp_text.font_size, &ft_default_face) * PT_MM <  dimensions.0{
                         temp_text.string = string.to_string();
                         text_arr.push(temp_text);
+                        nth_text += 1;
                     }
                     else{
                         //Needed for text wrapping
@@ -569,12 +581,14 @@ fn main() {
 
                                     let temp_temp_str = temp_string[..].to_string();
                                     let return_text = SpecialText{  align: temp_text.align,
+                                                                    nth: nth_text.clone(),
                                                                     font_size: temp_text.font_size,
                                                                     position: temp_text.position,
                                                                     font_color: temp_text.font_color,
                                                                     font: String::from(&temp_text.font[..]),
                                                                     string: temp_temp_str};
                                     text_arr.push(return_text);
+                                    nth_text += 1;
                                     break;
                                 }
                             }
@@ -582,6 +596,7 @@ fn main() {
                                 if calc_text_width_pt(&format!("{} {}", temp_string, string_peek), temp_text.font_size, &ft_default_face) * PT_MM >  dimensions.0{
                                     let temp_temp_str = temp_string[..].to_string();
                                     let return_text = SpecialText{  align: temp_text.align,
+                                                                    nth: nth_text.clone(),
                                                                     font_size: temp_text.font_size,
                                                                     position: temp_text.position,
                                                                     font_color: temp_text.font_color,
@@ -589,6 +604,7 @@ fn main() {
                                                                     string: temp_temp_str};
                                     text_arr.push(return_text);
                                     temp_string = String::new();
+                                    nth_text += 1;
                                 }
                             };
                         }
@@ -623,16 +639,23 @@ fn main() {
 
 
         for (it, text_ele) in text_arr.iter_mut().enumerate(){
-            default_font_position = [20.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64)];
 
             if text_ele.align == Alignment::default {text_ele.align = default_alignment.data;}
             if text_ele.font_size <= -1         {text_ele.font_size = default_font_size;}
             if text_ele.font_color[0] <= -1.0 || text_ele.font_color[1] <= -1.0 || text_ele.font_color[2] <= -1.0   {text_ele.font_color = default_font_color;}
-            if text_ele.position[0] <= -1.0 || text_ele.position[1] <= -1.0 {text_ele.position = default_font_position;}
 
-            if text_ele.position[0] < 1.0 && text_ele.position[1] < 1.0{
-                text_ele.position[0] = text_ele.position[0] * dimensions.0;
-                text_ele.position[1] = text_ele.position[1] * dimensions.1;
+            default_font_position = [20.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64)];
+            default_font_position = [20.0, dimensions.1 * 0.95 - (text_ele.nth as f64 * PX_MM * text_ele.font_size as f64)];
+
+            if text_ele.position[0] <= -1.0 || text_ele.position[1] <= -1.0 {text_ele.position = default_font_position;}
+            else{
+                if text_ele.position[0] < 1.0 && text_ele.position[1] < 1.0{
+                    text_ele.position[0] = text_ele.position[0] * dimensions.0;
+                    text_ele.position[1] = text_ele.position[1] * dimensions.1;
+                }
+                else{
+                    text_ele.position[1] = text_ele.position[1] - (text_ele.nth as f64 * PX_MM * text_ele.font_size as f64) ;
+                }
             }
 
             fill_color = Color::Rgb(Rgb::new(text_ele.font_color[0] / 256.0,
@@ -655,10 +678,12 @@ fn main() {
                 current_layer.use_text(&text_ele.string[..], text_ele.font_size, text_ele.position[0], text_ele.position[1], font_book.get(current_font).unwrap());
             }
             else if text_ele.align == Alignment::right{
-                render_right_aligned_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, font_book.get(current_font).unwrap());
+                render_right_aligned_text( &current_layer, &text_ele.string, text_ele.font_size,
+                                           dimensions.0, text_ele.position[1], &ft_default_face, font_book.get(current_font).unwrap());
             }
             else if text_ele.align == Alignment::center{
-                render_centered_text( &current_layer, &text_ele.string, text_ele.font_size, dimensions.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64), &ft_default_face, font_book.get(current_font).unwrap());
+                render_centered_text( &current_layer, &text_ele.string, text_ele.font_size, 
+                                      dimensions.0, text_ele.position[1], &ft_default_face, font_book.get(current_font).unwrap());
             }
         }
 

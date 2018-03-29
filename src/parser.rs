@@ -126,6 +126,7 @@ pub enum ConfigKwds{
     font_current,
     font_position,
     font_style,
+    font_nth,
     image,
     image_path,
     image_position,
@@ -238,7 +239,7 @@ fn image_func(parser_cursor: &mut ParserCursor)->SlideData{
 }
 
 fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
-    let config = gen_config_func(parser_cursor, 
+    let mut config = gen_config_func(parser_cursor, 
                                  &[("family", ConfigKwds::font_current, LexType::Str),
                                  ("size", ConfigKwds::font_size, LexType::Num),
                                  ("position", ConfigKwds::font_position, LexType::Arr),
@@ -249,6 +250,7 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
     parser_cursor.next();
     let mut return_data = Vec::new();
     if parser_cursor.current() != Some('{'){
+        config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(0.0)});
         let mut data = SlideData{  config: Some(config),
                                    kwd: ConfigKwds::text,
                                    data: ValueType::Err}; 
@@ -258,10 +260,13 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
     }
     else{
         parser_cursor.next();
+        let mut nth = 0;
         loop{
             if parser_cursor.current() == Some('}'){break;}
             else{
-                let mut data = SlideData{  config: Some(config.clone()),
+                let mut _config = config.clone();
+                _config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(nth as f64)});
+                let mut data = SlideData{  config: Some(_config),
                                            kwd: ConfigKwds::text,
                                            data: ValueType::Err}; 
                 let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
@@ -269,6 +274,7 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
                 return_data.push(data);
 
                 parser_cursor.next();
+                nth += 1;
             }
         }
     }
@@ -597,7 +603,7 @@ We can also change slide configurations for specific slides
 #slide
 #font(size=42) We can do different sized text
 #font(position=[0.3, 0.5], color=[200,50,50]) Place text where you want
-#font(family=\"Times\", size=32, style=\"bold\") We can change fonts!
+#font(family=\"Times\", size=32, style=\"bold\", position=[0.2, 0.2]) We can change fonts!
 
 #slide
 #font(position=[122, 40]){
