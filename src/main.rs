@@ -7,7 +7,8 @@ use printpdf::*;
 use std::fs::File;
 use std::io::BufWriter;
 use std::collections::HashMap;
-
+use std::io::Read;
+use std::env;
 
 use image::GenericImage;
 
@@ -376,9 +377,25 @@ fn main() {
                                               dimensions: [0.0, 0.0],
                                               path: String::from("/home/gunter/Rust/Projects/SlideShow/assets/linux_peng.png")});
  ///////////////////////////////////////////////////
- 
 
-    let document = example();
+    let mut file_name = String::new();
+    for (it, argument) in env::args().enumerate(){
+        println!("Arg {} {}", it, argument);
+        if it == 1{
+            file_name = argument;
+        } 
+    }
+
+    
+    let mut file_contents : Option<String> = None;
+    match File::open(file_name.clone()){
+        Ok(mut f)=> { let mut content = String::new(); 
+                  f.read_to_string(&mut content);
+                  file_contents = Some(content);}
+        Err(e)=> println!("{} {}",e, file_name)
+    }
+
+    let document = example(file_contents);
     println!("CARD GENERATION COMPLETE.\n\nSTARTING PDF GENERATION");
     for card in document.iter(){
         //println!("{:?}\n\n", card);

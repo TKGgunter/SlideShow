@@ -13,7 +13,6 @@ ToDo:
   ->Inline #font
 +load external fonts
 +decent default slide style
-+take input files
 +Add slide configure options default_font_family, font_size, font_color
 ========================================
 
@@ -30,6 +29,8 @@ TEST with a few simple slides
 +default slide style
 +better default image position
 +percentage / Mm consistancy
++Better file input
++Clean up directories
 ========================================
 
 +div

@@ -444,10 +444,12 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_ty
             let mut value = String::from("");
             loop{
                 if parser_cursor.current().unwrap() == '\n'{ 
-                    if parser_cursor.peek().unwrap() == '\n'{ break; }
-                    if parser_cursor.peek().unwrap() == '#'{ break; }
-                    if parser_cursor.peek().unwrap() == '}'{ break; }
-                    if parser_cursor.next() == None { break; };
+                    if let Some(p) = parser_cursor.peek(){ 
+                        if p == '\n'{ break; }
+                        if p == '#' { break; }
+                        if p == '}' { break; }
+                    } else {break;}
+                    if parser_cursor.next() == None { break; } //Redunant?
                     value.push(' ');
                     continue; 
                 }
@@ -569,10 +571,10 @@ fn read_contents(parser_cursor: &mut ParserCursor)->Card{
     return card;
 }
 
-pub fn example()->Vec<Card>{
-    let mut parser_cursor = ParserCursor::new();
-    parser_cursor.file_string = remove_comments(String::from(
+pub fn example(input_string: Option<String>)->Vec<Card>{
 
+    let mut slide_string = String::new();
+    let example_string = String::from(
 "
 //Thoth Gunter
 //Rust style comments
@@ -617,14 +619,12 @@ We can even add images
 #image(path=\"/some/path\")
 #image(path=\"/some/path\", position=[0.7, 0.1], width=0.8, height=0.8)
 
-#slide
-#h1 We need to think about headers this is syntactic sugar
--Bullets
--And bullet points
---And double bullets
 ##"
+);
 
-    ));
+    if let Some(s) = input_string{ slide_string = s; } else{ slide_string = example_string}
+    let mut parser_cursor = ParserCursor::new();
+    parser_cursor.file_string = remove_comments(slide_string);
 
     println!("FILE:\n\n{}\n\nBEGINNING CARD GENERATION", parser_cursor.file_string);
 
