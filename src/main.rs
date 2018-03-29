@@ -732,6 +732,14 @@ fn main() {
     //Testing area
     Image::from(image_data).add_to_layer(current_layer.clone(), Some(100.0), Some(100.0), None, Some(0.5), Some(0.5), None); //Defauct
     current_layer.use_text("ASDFADFAD", 32, 20.0, 20.0, font_book.get("times").unwrap());
+    current_layer.begin_text_section();
+    current_layer.set_font(font_book.get(&"times_italic").unwrap(), 32);
+    current_layer.set_text_cursor(20.0,160.0);
+    current_layer.write_text("RETEWRTW ", font_book.get(&"times_italic").unwrap());
+
+    current_layer.set_font(font_book.get(&"times").unwrap(), 32);
+    current_layer.write_text("wert ", font_book.get(&"times").unwrap());
+    current_layer.end_text_section();
     //
 
 

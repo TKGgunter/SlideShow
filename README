@@ -6,11 +6,12 @@ ToDo:
 ========================================
   This is needed for a proof of concept:
 ========================================
-+add font to parser
++Rewrite how text is sent to printpdf use write_text instead of what ever is currently used
   ->margins
   ->font position should place a starting cursor such that center & right align work
+  ->text margins
+  ->Inline #font
 +load external fonts
-+text margins
 +decent default slide style
 +take input files
 +Add slide configure options default_font_family, font_size, font_color
@@ -25,7 +26,6 @@ TEST with a few simple slides
 +integrate latex tables and mathmatics rendering from an external
 +Default text vertical center
 +Default font position
-+Inline #font
 +image alpha channel integrations
 +default slide style
 +better default image position
