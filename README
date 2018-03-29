@@ -6,12 +6,10 @@ ToDo:
 ========================================
   This is needed for a proof of concept:
 ========================================
-+margins
 +Inline #font
 +load external fonts
-+decent default slide style
-+Add slide configure options default_font_family, font_size, font_color
 +Default font style should be used after it is set by user configuration
++the created slide show file should take the markdown file name
 ========================================
 
 TEST with a few simple slides
@@ -25,6 +23,7 @@ TEST with a few simple slides
 +Default font position
 +image alpha channel integrations
 +default slide style
++Add slide configure options default_font_family, font_size, font_color
 +better default image position
 +percentage / Mm consistancy
 +Better file input

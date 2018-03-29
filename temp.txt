@@ -1,7 +1,31 @@
-#config()
+//Thoth Gunter
+#config(
+background_color= [0,0,0],
+font_color= [250, 250, 250],
+)
 
 #slide
-Can I get a slide?
+#font(style="bold", size=42, position=[0.2, 0.5])Hey I made my own slide program thingy!
 
-PLZ?
-##
+I can render text to a slide with different fonts.
+
+#font(position=[0.3, 0.3], color=[200,20,20])I can even place things where I want! with what ever color I want.
+
+#slide(background_color=[50,0,50])
+New slides are easy!
+So are images!
+#font(margin=0.5){
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+}
+
+#font(position=[0.2,0.5], size=32) And we have auto wrap!
+
+#image(path="some.img", position=[0.6,0.6])
+#font(position=[0.6, 0.55]) Oops, well we have default images :)
+
+#slide
+You can find the code here:
+
+github.com/TKGgunter/SlideShow
+
+#font(position=[0.3, 0.5], style="bold_italic", size=42) Pre-alpha boys

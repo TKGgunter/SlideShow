@@ -597,11 +597,13 @@ fn main() {
 
                 if let ValueType::Str(ref string) = element.data{
 
-                    if temp_text.margin < 0.0 { temp_text.margin = dimensions.0;}
-                    else if temp_text.margin < 1.0 { temp_text.margin *= dimensions.0;}
+                    if temp_text.font_size < 0 { temp_text.font_size = default_font_size;}
+                    if temp_text.margin < 0.0 { temp_text.margin = dimensions.0*0.8;}
+                    else if temp_text.margin < 1.0 { temp_text.margin *= dimensions.0*0.8;}
 
                     if calc_text_width_pt(&string.to_string(), temp_text.font_size, &ft_default_face) * PT_MM <  temp_text.margin{
                         temp_text.string = string.to_string();
+                        println!("{} {} {}", calc_text_width_pt(&string.to_string(), temp_text.font_size, &ft_default_face) * PT_MM, temp_text.margin, temp_text.string);
                         text_arr.push(temp_text);
                         nth_text += 1;
                     }
@@ -816,7 +818,7 @@ fn main() {
     current_layer.set_font(font_book.get(&"times_italic").unwrap(), 32);
     current_layer.set_line_height(32);
     current_layer.set_text_cursor(20.0,160.0);
-    current_layer.write_text("RETEWRTW ", font_book.get(&"times_italic").unwrap());
+    current_layer.write_text("THIS IS A TEST PAGE ", font_book.get(&"times_italic").unwrap());
 
     current_layer.set_font(font_book.get(&"times").unwrap(), 32);
     current_layer.write_text("wert ", font_book.get(&"times").unwrap());
