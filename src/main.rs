@@ -105,6 +105,7 @@ fn set_settings( card: &ConfigCard,
                  font_style: &mut String,
                  font_position: &mut [f64; 2],
                  font_nth: &mut i64,
+                 font_margin: &mut f64,
                  alignment: &mut Align,
                  image_path: &mut String,
                  image_position: &mut [f64;2],
@@ -252,6 +253,11 @@ fn set_settings( card: &ConfigCard,
                 *font_nth = n.clone() as i64;
             }
         }
+        else if config_data.kwd == ConfigKwds::font_margin{
+            if let ValueType::Num(ref n) = config_data.data{
+                *font_margin = n.clone();
+            }
+        }
         //END OF IFS//
     }
 }
@@ -273,6 +279,7 @@ struct SpecialText{
     align:      Alignment,
     nth:        i64,
     font_size:  i64,
+    margin:     f64,
     position:   [f64;2],
     font_color: [f64;3],
     font:       String,
@@ -284,6 +291,7 @@ impl SpecialText{
         SpecialText{align: Alignment::default, 
                     nth: 0, 
                     font_size: -1, 
+                    margin: -1.0, 
                     position: [-1.0, -1.0], 
                     font_color: [-1.0, -1.0, -1.0], 
                     font: String::new(),
@@ -449,6 +457,7 @@ fn main() {
             let mut temp_font_style = String::new();
             let mut temp_font_pos = [-1.0, -1.0];
             let mut temp_font_nth = -1;
+            let mut temp_font_margin = dimensions.0;
             let mut temp_image_path = String::new();
             let mut temp_image_pos = [0.0, 0.0];
             let mut temp_image_width = 0.0;
@@ -462,6 +471,7 @@ fn main() {
                                 &mut temp_font_style, 
                                 &mut temp_font_pos, 
                                 &mut temp_font_nth, 
+                                &mut temp_font_margin, 
                                 &mut default_alignment,
                                 &mut temp_image_path,
                                 &mut temp_image_pos,
@@ -491,6 +501,7 @@ fn main() {
                 let mut temp_font_size = -1; 
                 let mut temp_font_pos = [-1.0, -1.0];
                 let mut temp_font_nth = -1;
+                let mut temp_font_margin = dimensions.0;
                 let mut temp_alignment = Align{data: Alignment::left}; 
                 let mut temp_image_path = String::new();
                 let mut temp_image_pos = [0.0, 0.0];
@@ -506,6 +517,7 @@ fn main() {
                              &mut temp_font_style,
                              &mut temp_font_pos,
                              &mut temp_font_nth,
+                             &mut temp_font_margin,
                              &mut temp_alignment,
                              &mut temp_image_path,
                              &mut temp_image_pos,
@@ -535,6 +547,7 @@ fn main() {
                     let mut temp_font_style = String::new();
                     let mut temp_font_pos = [-1.0, -1.0];
                     let mut temp_font_nth = -1;
+                    let mut temp_font_margin = dimensions.0;
                     let mut temp_font_size = -1; 
                     let mut temp_alignment = Align{data: Alignment::left}; 
                     let mut temp_image_path = String::new();
@@ -551,6 +564,7 @@ fn main() {
                                  &mut temp_font_style,
                                  &mut temp_font_pos,
                                  &mut temp_font_nth,
+                                 &mut temp_font_margin,
                                  &mut temp_alignment,
                                  &mut temp_image_path,
                                  &mut temp_image_pos,
@@ -564,6 +578,8 @@ fn main() {
                     temp_text.position = temp_font_pos;
                     temp_text.font = temp_font_current;
                     temp_text.nth = temp_font_nth;
+                    temp_text.margin = temp_font_margin;
+
                     if temp_font_style != ""{
                         temp_text.font.push_str("_");
                         temp_text.font.push_str(&temp_font_style[..]);
@@ -580,7 +596,11 @@ fn main() {
 
 
                 if let ValueType::Str(ref string) = element.data{
-                    if calc_text_width_pt(&string.to_string(), temp_text.font_size, &ft_default_face) * PT_MM <  dimensions.0{
+
+                    if temp_text.margin < 0.0 { temp_text.margin = dimensions.0;}
+                    else if temp_text.margin < 1.0 { temp_text.margin *= dimensions.0;}
+
+                    if calc_text_width_pt(&string.to_string(), temp_text.font_size, &ft_default_face) * PT_MM <  temp_text.margin{
                         temp_text.string = string.to_string();
                         text_arr.push(temp_text);
                         nth_text += 1;
@@ -590,6 +610,7 @@ fn main() {
                         let mut temp_string = String::from("");
                         let mut string_iter = string.split_whitespace().peekable();
                         loop{
+
                             match string_iter.next() {
                                 Some(string_ele)=>{
                                     temp_string.push_str(&format!("{} ",string_ele));
@@ -597,9 +618,11 @@ fn main() {
                                 None => {
 
                                     let temp_temp_str = temp_string[..].to_string();
+
                                     let return_text = SpecialText{  align: temp_text.align,
                                                                     nth: nth_text.clone(),
                                                                     font_size: temp_text.font_size,
+                                                                    margin: temp_text.margin,
                                                                     position: temp_text.position,
                                                                     font_color: temp_text.font_color,
                                                                     font: String::from(&temp_text.font[..]),
@@ -610,11 +633,12 @@ fn main() {
                                 }
                             }
                             if let Some(string_peek) = string_iter.peek() { 
-                                if calc_text_width_pt(&format!("{} {}", temp_string, string_peek), temp_text.font_size, &ft_default_face) * PT_MM >  dimensions.0{
+                                if calc_text_width_pt(&format!("{} {}", temp_string, string_peek), temp_text.font_size, &ft_default_face) * PT_MM >  temp_text.margin{
                                     let temp_temp_str = temp_string[..].to_string();
                                     let return_text = SpecialText{  align: temp_text.align,
                                                                     nth: nth_text.clone(),
                                                                     font_size: temp_text.font_size,
+                                                                    margin: temp_text.margin,
                                                                     position: temp_text.position,
                                                                     font_color: temp_text.font_color,
                                                                     font: String::from(&temp_text.font[..]),
@@ -654,15 +678,27 @@ fn main() {
         current_layer.add_shape(line1);
         ////////////////////////////////////////////////
 
-
+        let mut current_alignment = default_alignment.data;
+        current_layer.begin_text_section();
+        current_layer.set_line_height(default_font_size.clone());
+        current_layer.set_text_cursor(dimensions.0 * 0.1, dimensions.1 * 0.9);
         for (it, text_ele) in text_arr.iter_mut().enumerate(){
 
             if text_ele.align == Alignment::default {text_ele.align = default_alignment.data;}
             if text_ele.font_size <= -1         {text_ele.font_size = default_font_size;}
+            else                                {current_layer.set_line_height(text_ele.font_size);}
             if text_ele.font_color[0] <= -1.0 || text_ele.font_color[1] <= -1.0 || text_ele.font_color[2] <= -1.0   {text_ele.font_color = default_font_color;}
 
-            default_font_position = [20.0, dimensions.1 * 0.95 - (it as f64 * PX_MM * text_ele.font_size as f64)];
-            default_font_position = [20.0, dimensions.1 * 0.95 - (text_ele.nth as f64 * PX_MM * text_ele.font_size as f64)];
+            if text_ele.align == Alignment::left{
+                default_font_position = [20.0, dimensions.1 * 0.9 - (text_ele.nth as f64 * PX_MM * text_ele.font_size as f64)];
+            }
+            else if text_ele.align == Alignment::center{
+                default_font_position = [dimensions.0 * 0.5, dimensions.1 * 0.9 - (text_ele.nth as f64 * PX_MM * text_ele.font_size as f64)];
+            }
+            else if text_ele.align == Alignment::right{
+                default_font_position = [dimensions.0 * 0.9, dimensions.1 * 0.9 - (text_ele.nth as f64 * PX_MM * text_ele.font_size as f64)];
+            }
+            
 
             if text_ele.position[0] <= -1.0 || text_ele.position[1] <= -1.0 {text_ele.position = default_font_position;}
             else{
@@ -674,6 +710,17 @@ fn main() {
                     text_ele.position[1] = text_ele.position[1] - (text_ele.nth as f64 * PX_MM * text_ele.font_size as f64) ;
                 }
             }
+            if text_ele.nth == 0 && text_ele.position[0] >= -1.0 && text_ele.position[1] >= -1.0{
+                current_layer.end_text_section();
+                current_layer.begin_text_section();
+                current_layer.set_line_height(text_ele.font_size);
+                current_layer.set_text_cursor(text_ele.position[0], text_ele.position[1]);
+            }
+            if text_ele.nth !=0 {current_layer.add_line_break();}
+
+
+
+
 
             fill_color = Color::Rgb(Rgb::new(text_ele.font_color[0] / 256.0,
                                              text_ele.font_color[1] / 256.0,
@@ -691,18 +738,33 @@ fn main() {
             }
 
             //Render default text
+            current_layer.set_font(font_book.get(current_font).unwrap(), text_ele.font_size);
             if text_ele.align == Alignment::left{
-                current_layer.use_text(&text_ele.string[..], text_ele.font_size, text_ele.position[0], text_ele.position[1], font_book.get(current_font).unwrap());
-            }
-            else if text_ele.align == Alignment::right{
-                render_right_aligned_text( &current_layer, &text_ele.string, text_ele.font_size,
-                                           dimensions.0, text_ele.position[1], &ft_default_face, font_book.get(current_font).unwrap());
+                current_layer.write_text(&text_ele.string[..], font_book.get(current_font).unwrap());
             }
             else if text_ele.align == Alignment::center{
-                render_centered_text( &current_layer, &text_ele.string, text_ele.font_size, 
-                                      dimensions.0, text_ele.position[1], &ft_default_face, font_book.get(current_font).unwrap());
+                current_layer.end_text_section();
+                current_layer.begin_text_section();
+                current_layer.set_line_height(text_ele.font_size);
+                current_layer.set_text_cursor(calc_lower_left_for_centered_text(&text_ele.string, text_ele.font_size, text_ele.margin, &ft_default_face) + ( text_ele.position[0] - dimensions.0 / 2.0), text_ele.position[1]);
+
+                current_layer.set_font(font_book.get(current_font).unwrap(), text_ele.font_size);
+                current_layer.write_text(&text_ele.string[..], font_book.get(current_font).unwrap());
+                current_layer.end_text_section();
+            }
+            else if text_ele.align == Alignment::right{
+                current_layer.end_text_section();
+                current_layer.begin_text_section();
+                current_layer.set_line_height(text_ele.font_size);
+                current_layer.set_text_cursor(calc_lower_left_for_right_aligned_text(&text_ele.string, text_ele.font_size, text_ele.margin, &ft_default_face), text_ele.position[1]);
+
+
+                current_layer.set_font(font_book.get(current_font).unwrap(), text_ele.font_size);
+                current_layer.write_text(&text_ele.string[..], font_book.get(current_font).unwrap());
+                current_layer.end_text_section();
             }
         }
+        current_layer.end_text_section();
 
         for (it, img_ele) in img_arr.iter().enumerate(){
             let temp_img = load_image(&img_ele);
@@ -749,13 +811,22 @@ fn main() {
     //Testing area
     Image::from(image_data).add_to_layer(current_layer.clone(), Some(100.0), Some(100.0), None, Some(0.5), Some(0.5), None); //Defauct
     current_layer.use_text("ASDFADFAD", 32, 20.0, 20.0, font_book.get("times").unwrap());
+
     current_layer.begin_text_section();
     current_layer.set_font(font_book.get(&"times_italic").unwrap(), 32);
+    current_layer.set_line_height(32);
     current_layer.set_text_cursor(20.0,160.0);
     current_layer.write_text("RETEWRTW ", font_book.get(&"times_italic").unwrap());
 
     current_layer.set_font(font_book.get(&"times").unwrap(), 32);
     current_layer.write_text("wert ", font_book.get(&"times").unwrap());
+    current_layer.add_line_break();
+    current_layer.write_text("wert ", font_book.get(&"times").unwrap());
+    current_layer.end_text_section();
+    current_layer.begin_text_section();
+    current_layer.set_font(font_book.get(&"times_italic").unwrap(), 32);
+    current_layer.set_text_cursor(0.0,0.0);
+    current_layer.write_text("RETEWRTW ", font_book.get(&"times_italic").unwrap());
     current_layer.end_text_section();
     //
 

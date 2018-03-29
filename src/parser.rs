@@ -127,6 +127,7 @@ pub enum ConfigKwds{
     font_position,
     font_style,
     font_nth,
+    font_margin,
     image,
     image_path,
     image_position,
@@ -245,6 +246,7 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
                                  ("position", ConfigKwds::font_position, LexType::Arr),
                                  ("color", ConfigKwds::font_color, LexType::Arr),
                                  ("style", ConfigKwds::font_style, LexType::Str),
+                                 ("margin", ConfigKwds::font_margin, LexType::Num),
                                  ],
                                  "#font");
     parser_cursor.next();
@@ -608,8 +610,8 @@ We can also change slide configurations for specific slides
 #font(family=\"Times\", size=32, style=\"bold\", position=[0.2, 0.2]) We can change fonts!
 
 #slide
-#font(position=[122, 40]){
-Something, something
+#font(position=[122, 40], margin=0.5){
+Something, something, something else and another thing
 
 ASDFAF
 }

@@ -6,14 +6,12 @@ ToDo:
 ========================================
   This is needed for a proof of concept:
 ========================================
-+Rewrite how text is sent to printpdf use write_text instead of what ever is currently used
-  ->margins
-  ->font position should place a starting cursor such that center & right align work
-  ->text margins
-  ->Inline #font
++margins
++Inline #font
 +load external fonts
 +decent default slide style
 +Add slide configure options default_font_family, font_size, font_color
++Default font style should be used after it is set by user configuration
 ========================================
 
 TEST with a few simple slides
