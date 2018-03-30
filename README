@@ -1,22 +1,16 @@
+SlideShow a slide creating program with an easy syntax, and easy work flow.
+
+News: We are in pre-alpha! What this means! Feature additions will be halted. Testing, bug squashing and error notificatoins take presedence.
+
+
 Bugs:
 +Extra slide at the very end. Why?
-+New line at the beginning of some slides. What is this about?
 
 ToDo:
-========================================
-  This is needed for a proof of concept:
-========================================
 +Inline #font
 +load external fonts
 +Default font style should be used after it is set by user configuration
 +the created slide show file should take the markdown file name
-========================================
-
-TEST with a few simple slides
-
-========================================
-  Shortly after proof of concept:
-========================================
 +Add custom default image
 +integrate latex tables and mathmatics rendering from an external
 +Default text vertical center
@@ -28,8 +22,6 @@ TEST with a few simple slides
 +percentage / Mm consistancy
 +Better file input
 +Clean up directories
-========================================
-
 +div
   -> Get everything working inside divs
 +Better errors statements
