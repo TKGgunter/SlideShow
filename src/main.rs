@@ -832,7 +832,9 @@ fn main() {
     current_layer.end_text_section();
     //
 
-
-    doc.save(&mut BufWriter::new(File::create("test_working.pdf").unwrap())).unwrap();
+    let _pdf_name : Vec<&str> = file_name.split(".").collect();
+    let mut pdf_name : String = String::from(_pdf_name[0]);
+    pdf_name.push_str(".pdf");
+    doc.save(&mut BufWriter::new(File::create(pdf_name).unwrap())).unwrap();
 }
 
