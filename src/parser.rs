@@ -250,6 +250,13 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
                                  ],
                                  "#font");
     parser_cursor.next();
+    for i in 0..config.config_data.len(){
+        if config.config_data[i].kwd == ConfigKwds::font_position{
+            config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(0.0)});
+            break;
+        }
+    }
+
     let mut return_data = Vec::new();
     if parser_cursor.current() != Some('{'){
         config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(0.0)});
@@ -626,7 +633,6 @@ We can even add images
 #slide(background_color=[50,0,50])
 New slides are easy!
 So are images!
-
 #font(position=[0.9, 0.9]){
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 }

@@ -577,6 +577,7 @@ fn main() {
                     temp_text.position = temp_font_pos;
                     temp_text.font = temp_font_current;
                     temp_text.nth = temp_font_nth;
+                    if temp_text.nth > -1 { nth_text = temp_text.nth;}
                     temp_text.margin = temp_font_margin;
 
                     if temp_font_style != ""{
