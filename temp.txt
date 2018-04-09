@@ -19,9 +19,10 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 }
 
 #font(position=[0.2,0.5], size=32) And we have auto wrap!
-
 #image(path="some.img", position=[0.6,0.6])
 #font(position=[0.6, 0.55]) Oops, well we have default images :)
+
+
 
 #slide
 You can find the code here:

@@ -4,7 +4,9 @@ News: We are in pre-alpha! What this means! Feature additions will be halted. Te
 
 
 Bugs:
++positioning wrapped font text
 +Extra slide at the very end. Why?
+
 
 ToDo:
 +Inline #font

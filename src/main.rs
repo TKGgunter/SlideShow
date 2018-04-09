@@ -368,7 +368,7 @@ fn main() {
     let mut default_slide_color = [256.0, 256.0, 256.0];
     let mut default_font_family = "times";
     let mut default_font_color = [0.0, 0.0, 0.0];
-    let mut default_font_position = [20.0, 0.0];
+    let mut default_font_position = [20.0, 20.0];
     let mut default_font_size : i64 = 16; 
     let mut default_alignment = Align{data: Alignment::left}; 
 
@@ -386,7 +386,7 @@ fn main() {
                                               path: String::from("/home/gunter/Rust/Projects/SlideShow/assets/linux_peng.png")});
  ///////////////////////////////////////////////////
 
-    let mut file_name = String::new();
+    let mut file_name = String::from("example.txt");
     for (it, argument) in env::args().enumerate(){
         println!("Arg {} {}", it, argument);
         if it == 1{
@@ -408,7 +408,6 @@ fn main() {
     for card in document.iter(){
         //println!("{:?}\n\n", card);
     }
-
 
 
 
@@ -712,22 +711,35 @@ fn main() {
                     text_ele.position[1] = text_ele.position[1] - (text_ele.nth as f64 * PX_MM * text_ele.font_size as f64) ;
                 }
             }
-            if text_ele.nth == 0 && text_ele.position[0] >= -1.0 && text_ele.position[1] >= -1.0{
+            if (text_ele.nth == 0 && text_ele.position[0] >= -1.0 && text_ele.position[1] >= -1.0) {
                 current_layer.end_text_section();
                 current_layer.begin_text_section();
                 current_layer.set_line_height(text_ele.font_size);
                 current_layer.set_text_cursor(text_ele.position[0], text_ele.position[1]);
             }
+
+            /*
+            let _it = if it == 0 {0} else{it - 1};
+            if (text_ele.position[0] != text_arr.get(_it).unwrap().position[0]){
+                current_layer.end_text_section();
+                current_layer.begin_text_section();
+                current_layer.set_line_height(text_ele.font_size);
+                current_layer.set_text_cursor(text_ele.position[0], text_ele.position[1]);
+            }
+            */
             if text_ele.nth !=0 {current_layer.add_line_break();}
 
 
 
+            println!("Slide dimensions: {:?} {:?} {:?} {:?} {}", text_ele.nth, text_ele.position, default_font_position, text_ele.string, ( text_ele.position[0] - dimensions.0 / 2.0 + ( dimensions.0 - text_ele.margin) / 2.0));
 
 
             fill_color = Color::Rgb(Rgb::new(text_ele.font_color[0] / 256.0,
                                              text_ele.font_color[1] / 256.0,
                                              text_ele.font_color[2] / 256.0, None));
             current_layer.set_fill_color(fill_color);
+
+
            
             let mut current_font = default_font_family; 
             if font_book.contains_key(&text_ele.font[..]){
@@ -739,16 +751,17 @@ fn main() {
                 }
             }
 
-            //Render default text
+
             current_layer.set_font(font_book.get(current_font).unwrap(), text_ele.font_size);
             if text_ele.align == Alignment::left{
+
                 current_layer.write_text(&text_ele.string[..], font_book.get(current_font).unwrap());
             }
             else if text_ele.align == Alignment::center{
                 current_layer.end_text_section();
                 current_layer.begin_text_section();
                 current_layer.set_line_height(text_ele.font_size);
-                current_layer.set_text_cursor(calc_lower_left_for_centered_text(&text_ele.string, text_ele.font_size, text_ele.margin, &ft_default_face) + ( text_ele.position[0] - dimensions.0 / 2.0), text_ele.position[1]);
+                current_layer.set_text_cursor(calc_lower_left_for_centered_text(&text_ele.string, text_ele.font_size, text_ele.margin, &ft_default_face) + ( text_ele.position[0] - dimensions.0 / 2.0 + ( dimensions.0 - text_ele.margin) / 2.0), text_ele.position[1]);
 
                 current_layer.set_font(font_book.get(current_font).unwrap(), text_ele.font_size);
                 current_layer.write_text(&text_ele.string[..], font_book.get(current_font).unwrap());

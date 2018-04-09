@@ -594,6 +594,8 @@ extern= \"/path\"
 
 
 #slide
+a
+
 We can write a slide like this. 
 No need for a bracketted structure.
 
@@ -620,6 +622,20 @@ ASDFAF
 We can even add images
 #image(path=\"/some/path\")
 #image(path=\"/some/path\", position=[0.7, 0.1], width=0.8, height=0.8)
+
+#slide(background_color=[50,0,50])
+New slides are easy!
+So are images!
+
+#font(position=[0.9, 0.9]){
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+}
+
+#font(position=[0.2,0.5], size=32) And we have auto wrap!
+
+#image(path=\"some.img\", position=[0.6,0.6])
+#font(position=[0.6, 0.55]) Oops, well we have default images :)
+
 
 ##"
 );
