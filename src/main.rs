@@ -16,6 +16,8 @@ use image::GenericImage;
 mod parser;
 use parser::{Card, ConfigCard, SlideCard, ConfigKwds, ValueType, example};
 
+mod latex;
+use latex::{run_external, run_latex, run_dvipng};
 
 
 static PT_MM : f64 = 0.352778;
@@ -357,6 +359,10 @@ static FONT_TIMES_ITALIC:   &'static [u8]  =  include_bytes!("FreeSerif/FreeSeri
 static FONT_TIMES_BOLDITALIC: &'static [u8] =  include_bytes!("FreeSerif/FreeSerifBoldItalic.ttf");
 
 fn main() {
+
+    run_external();
+    println!("{:?} {:?}", run_latex(None), run_dvipng(None));
+
 
     let ft_lib = match freetype::Library::init(){ Ok(lib)=>{lib}, Err(e)=>{panic!("FreeType could not load: {:?}", e)}};
     let ft_default_face = match ft_lib.new_memory_face(FONT_TIMES, 0) { Ok(face) => {face}, Err(e) => {panic!("Ft face could not be loaded {:?}", e)}};

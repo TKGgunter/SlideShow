@@ -8,12 +8,16 @@ Bugs:
 
 
 ToDo:
++integrate latex tables and mathmatics rendering from an external
 +Inline #font
+===
+
++div
+  -> Get everything working inside divs
 +load external fonts
 +Default font style should be used after it is set by user configuration
 +the created slide show file should take the markdown file name
 +Add custom default image
-+integrate latex tables and mathmatics rendering from an external
 +Default text vertical center
 +Default font position
 +image alpha channel integrations
@@ -23,8 +27,6 @@ ToDo:
 +percentage / Mm consistancy
 +Better file input
 +Clean up directories
-+div
-  -> Get everything working inside divs
 +Better errors statements
 +add header to parser
 +bullets
