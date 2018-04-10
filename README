@@ -10,6 +10,7 @@ Bugs:
 ToDo:
 +integrate latex tables and mathmatics rendering from an external
 +Inline #font
++Reconstruct how newlines are handled
 ===
 
 +div
@@ -31,6 +32,7 @@ ToDo:
 +add header to parser
 +bullets
 +newline
++tabs how do they work ?
 +new paragraph vs newline <= Mar 24 they are the same
 
 

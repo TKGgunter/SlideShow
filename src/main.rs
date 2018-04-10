@@ -361,7 +361,7 @@ static FONT_TIMES_BOLDITALIC: &'static [u8] =  include_bytes!("FreeSerif/FreeSer
 fn main() {
 
     run_external();
-    println!("{:?} {:?}", run_latex(None), run_dvipng(None));
+    println!("\u{2022} {:?} {:?}", run_latex(None), run_dvipng(None));
 
 
     let ft_lib = match freetype::Library::init(){ Ok(lib)=>{lib}, Err(e)=>{panic!("FreeType could not load: {:?}", e)}};
@@ -832,7 +832,7 @@ fn main() {
 
     //Testing area
     Image::from(image_data).add_to_layer(current_layer.clone(), Some(100.0), Some(100.0), None, Some(0.5), Some(0.5), None); //Defauct
-    current_layer.use_text("ASDFADFAD", 32, 20.0, 20.0, font_book.get("times").unwrap());
+    current_layer.use_text("\u{2022} ASDFADFAD", 32, 20.0, 20.0, font_book.get("times").unwrap());
 
     current_layer.begin_text_section();
     current_layer.set_font(font_book.get(&"times_italic").unwrap(), 32);

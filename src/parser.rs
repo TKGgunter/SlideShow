@@ -632,7 +632,7 @@ We can even add images
 
 #slide(background_color=[50,0,50])
 New slides are easy!
-So are images!
+#bul So are images!
 #font(position=[0.9, 0.9]){
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 }
@@ -648,7 +648,10 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 
     if let Some(s) = input_string{ slide_string = s; } else{ slide_string = example_string}
     let mut parser_cursor = ParserCursor::new();
-    parser_cursor.file_string = remove_comments(slide_string);
+    slide_string = remove_comments(slide_string);
+    slide_string = replace_bullet(slide_string);
+
+    parser_cursor.file_string = slide_string;
 
     println!("FILE:\n\n{}\n\nBEGINNING CARD GENERATION", parser_cursor.file_string);
 
@@ -695,5 +698,13 @@ fn remove_comments(contents: String)->String{
         }
         clean_contents += &line[0..length]; 
     }
+    clean_contents
+}
+
+
+
+fn replace_bullet(contents: String)->String{
+    let mut clean_contents = String::new();
+    clean_contents = contents.replace("\n#bul ", "\n\n\u{2022} ");
     clean_contents
 }
