@@ -323,7 +323,7 @@ impl SpecialImage{
 }
 
 
-fn load_image(sp_img: &SpecialImage)->ImageXObject{
+fn load_image(sp_img: &SpecialImage, _bkg_color: Option<[f64;3]>)->ImageXObject{
     let default_img = match image::open(&sp_img.path[..]){  Ok(img)=> img, 
                                                 Err(e)=>{println!("Error: image not found!");
                                                          image::load_from_memory(DEFAULT_IMG).unwrap()}
@@ -340,10 +340,20 @@ fn load_image(sp_img: &SpecialImage)->ImageXObject{
         clipping_bbox: None,
     };
 
+    let mut bkg_color = if _bkg_color == None{[255.0, 255.0, 255.0]} else{_bkg_color.unwrap()};
+        
     for pixel in default_img.pixels(){
-        image_data.image_data.push( pixel.2[0] as u8);
-        image_data.image_data.push( pixel.2[1] as u8);
-        image_data.image_data.push( pixel.2[2] as u8);
+        //if pixel.2.len() > 3 {
+            let alpha = pixel.2[3] as f64 / 255.0;
+            image_data.image_data.push( (alpha * pixel.2[0] as f64 + (1.0 - alpha) * bkg_color[0])as u8);
+            image_data.image_data.push( (alpha * pixel.2[1] as f64 + (1.0 - alpha) * bkg_color[1])as u8);
+            image_data.image_data.push( (alpha * pixel.2[2] as f64 + (1.0 - alpha) * bkg_color[2])as u8);
+        //}
+        //else{
+        //    image_data.image_data.push( pixel.2[0] as u8);
+        //    image_data.image_data.push( pixel.2[1] as u8);
+        //    image_data.image_data.push( pixel.2[2] as u8);
+       // }
     }
 
     image_data
@@ -389,7 +399,7 @@ fn main() {
     let image_data = load_image(&SpecialImage{ align: Alignment::default, 
                                               position: [0.0, 0.0],
                                               dimensions: [0.0, 0.0],
-                                              path: String::from("/home/gunter/Rust/Projects/SlideShow/assets/linux_peng.png")});
+                                              path: String::from("/home/gunter/Rust/Projects/SlideShow/assets/linux_peng.png")}, Some(default_slide_color));
  ///////////////////////////////////////////////////
 
     let mut file_name = String::from("example.txt");
@@ -679,11 +689,47 @@ fn main() {
                                              color[1] / 256.0,
                                              color[2] / 256.0, None));
         }
-        some_slide_color = None;
 
 
         current_layer.set_fill_color(fill_color);
         current_layer.add_shape(line1);
+        //
+        //
+        for (it, img_ele) in img_arr.iter().enumerate(){
+            let bkg_color = if some_slide_color == None{Some(default_slide_color)} else{some_slide_color};
+            let temp_img = load_image(&img_ele, bkg_color);
+
+            let mut img_position_x = img_ele.position[0];
+            let mut img_position_y = img_ele.position[1];
+            if img_ele.position[0] < 1.0 && img_ele.position[1] < 1.0{
+                img_position_x *= dimensions.0;
+                img_position_y *= dimensions.1;
+            }
+            
+            let mut img_width  : Option<f64> = None;
+            let mut img_height : Option<f64> = None;
+            if img_ele.dimensions[0] > 0.0 {
+                if img_ele.dimensions[0] > 1.0{
+                    img_width = Some(img_ele.dimensions[0] / temp_img.width as f64);
+                }
+                else{
+                    img_width = Some(img_ele.dimensions[0]);
+                }
+            }
+            if img_ele.dimensions[1] > 0.0 {
+                if img_ele.dimensions[1] > 1.0{
+                    img_height = Some(img_ele.dimensions[1] / temp_img.height as f64);
+                }
+                else{
+                    img_height = Some(img_ele.dimensions[1]);
+                }
+            }
+            Image::from(temp_img).add_to_layer(current_layer.clone(), Some(img_position_x),
+                                                                      Some(img_position_y),
+                                                                      None,
+                                                                      img_width, img_height,None);
+        }
+        some_slide_color = None;
         ////////////////////////////////////////////////
 
         let mut current_alignment = default_alignment.data;
@@ -787,40 +833,6 @@ fn main() {
             }
         }
         current_layer.end_text_section();
-
-        for (it, img_ele) in img_arr.iter().enumerate(){
-            let temp_img = load_image(&img_ele);
-
-            let mut img_position_x = img_ele.position[0];
-            let mut img_position_y = img_ele.position[1];
-            if img_ele.position[0] < 1.0 && img_ele.position[1] < 1.0{
-                img_position_x *= dimensions.0;
-                img_position_y *= dimensions.1;
-            }
-            
-            let mut img_width  : Option<f64> = None;
-            let mut img_height : Option<f64> = None;
-            if img_ele.dimensions[0] > 0.0 {
-                if img_ele.dimensions[0] > 1.0{
-                    img_width = Some(img_ele.dimensions[0] / temp_img.width as f64);
-                }
-                else{
-                    img_width = Some(img_ele.dimensions[0]);
-                }
-            }
-            if img_ele.dimensions[1] > 0.0 {
-                if img_ele.dimensions[1] > 1.0{
-                    img_height = Some(img_ele.dimensions[1] / temp_img.height as f64);
-                }
-                else{
-                    img_height = Some(img_ele.dimensions[1]);
-                }
-            }
-            Image::from(temp_img).add_to_layer(current_layer.clone(), Some(img_position_x),
-                                                                      Some(img_position_y),
-                                                                      None,
-                                                                      img_width, img_height,None);
-        }
 
 
         if add_new_slide{
