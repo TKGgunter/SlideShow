@@ -17,7 +17,7 @@ mod parser;
 use parser::{Card, ConfigCard, SlideCard, ConfigKwds, ValueType, example};
 
 mod latex;
-use latex::{run_external, run_latex, run_dvipng};
+use latex::{run_external, run_latex, run_dvipng, clean_tex};
 
 
 static PT_MM : f64 = 0.352778;
@@ -362,7 +362,7 @@ fn main() {
 
     run_external();
     println!("\u{2022} {:?} {:?}", run_latex(None), run_dvipng(None));
-
+    clean_tex(None);
 
     let ft_lib = match freetype::Library::init(){ Ok(lib)=>{lib}, Err(e)=>{panic!("FreeType could not load: {:?}", e)}};
     let ft_default_face = match ft_lib.new_memory_face(FONT_TIMES, 0) { Ok(face) => {face}, Err(e) => {panic!("Ft face could not be loaded {:?}", e)}};
@@ -601,61 +601,82 @@ fn main() {
                 }
 
 
-                if let ValueType::Str(ref string) = element.data{
+                //Eveything should be framed in this manner
+                if element.kwd == ConfigKwds::tex{
 
-                    if temp_text.font_size < 0 { temp_text.font_size = default_font_size;}
-                    if temp_text.margin < 0.0 { temp_text.margin = dimensions.0*0.8;}
-                    else if temp_text.margin < 1.0 { temp_text.margin *= dimensions.0*0.8;}
-
-                    if calc_text_width_pt(&string.to_string(), temp_text.font_size, &ft_default_face) * PT_MM <  temp_text.margin{
-                        temp_text.string = string.to_string();
-                        println!("{} {} {}", calc_text_width_pt(&string.to_string(), temp_text.font_size, &ft_default_face) * PT_MM, temp_text.margin, temp_text.string);
-                        text_arr.push(temp_text);
-                        nth_text += 1;
+                    if let ValueType::Str(ref s) = element.data{
+                        run_latex(Some(s.clone()));
                     }
                     else{
-                        //Needed for text wrapping
-                        let mut temp_string = String::from("");
-                        let mut string_iter = string.split_whitespace().peekable();
-                        loop{
+                        run_latex(None);
+                    }
+                    run_dvipng(None);
 
-                            match string_iter.next() {
-                                Some(string_ele)=>{
-                                    temp_string.push_str(&format!("{} ",string_ele));
-                                },
-                                None => {
+                    let mut temp_image = SpecialImage::new();
+                    temp_image.path = String::from("output1.png");
+                    temp_image.position = [10.0, 10.0];
+                    temp_image.dimensions[0] = 5.0 * dimensions.0 ;
+                    temp_image.dimensions[1] = 5.0 * dimensions.1;
+                    img_arr.push(temp_image);
 
-                                    let temp_temp_str = temp_string[..].to_string();
+                    clean_tex(None); 
+                }
+                else{
+                    if let ValueType::Str(ref string) = element.data{
 
-                                    let return_text = SpecialText{  align: temp_text.align,
-                                                                    nth: nth_text.clone(),
-                                                                    font_size: temp_text.font_size,
-                                                                    margin: temp_text.margin,
-                                                                    position: temp_text.position,
-                                                                    font_color: temp_text.font_color,
-                                                                    font: String::from(&temp_text.font[..]),
-                                                                    string: temp_temp_str};
-                                    text_arr.push(return_text);
-                                    nth_text += 1;
-                                    break;
+                        if temp_text.font_size < 0 { temp_text.font_size = default_font_size;}
+                        if temp_text.margin < 0.0 { temp_text.margin = dimensions.0*0.8;}
+                        else if temp_text.margin < 1.0 { temp_text.margin *= dimensions.0*0.8;}
+
+                        if calc_text_width_pt(&string.to_string(), temp_text.font_size, &ft_default_face) * PT_MM <  temp_text.margin{
+                            temp_text.string = string.to_string();
+                            text_arr.push(temp_text);
+                            nth_text += 1;
+                        }
+                        else{
+                            //Needed for text wrapping
+                            let mut temp_string = String::from("");
+                            let mut string_iter = string.split_whitespace().peekable();
+                            loop{
+
+                                match string_iter.next() {
+                                    Some(string_ele)=>{
+                                        temp_string.push_str(&format!("{} ",string_ele));
+                                    },
+                                    None => {
+
+                                        let temp_temp_str = temp_string[..].to_string();
+
+                                        let return_text = SpecialText{  align: temp_text.align,
+                                                                        nth: nth_text.clone(),
+                                                                        font_size: temp_text.font_size,
+                                                                        margin: temp_text.margin,
+                                                                        position: temp_text.position,
+                                                                        font_color: temp_text.font_color,
+                                                                        font: String::from(&temp_text.font[..]),
+                                                                        string: temp_temp_str};
+                                        text_arr.push(return_text);
+                                        nth_text += 1;
+                                        break;
+                                    }
                                 }
+                                if let Some(string_peek) = string_iter.peek() { 
+                                    if calc_text_width_pt(&format!("{} {}", temp_string, string_peek), temp_text.font_size, &ft_default_face) * PT_MM >  temp_text.margin{
+                                        let temp_temp_str = temp_string[..].to_string();
+                                        let return_text = SpecialText{  align: temp_text.align,
+                                                                        nth: nth_text.clone(),
+                                                                        font_size: temp_text.font_size,
+                                                                        margin: temp_text.margin,
+                                                                        position: temp_text.position,
+                                                                        font_color: temp_text.font_color,
+                                                                        font: String::from(&temp_text.font[..]),
+                                                                        string: temp_temp_str};
+                                        text_arr.push(return_text);
+                                        temp_string = String::new();
+                                        nth_text += 1;
+                                    }
+                                };
                             }
-                            if let Some(string_peek) = string_iter.peek() { 
-                                if calc_text_width_pt(&format!("{} {}", temp_string, string_peek), temp_text.font_size, &ft_default_face) * PT_MM >  temp_text.margin{
-                                    let temp_temp_str = temp_string[..].to_string();
-                                    let return_text = SpecialText{  align: temp_text.align,
-                                                                    nth: nth_text.clone(),
-                                                                    font_size: temp_text.font_size,
-                                                                    margin: temp_text.margin,
-                                                                    position: temp_text.position,
-                                                                    font_color: temp_text.font_color,
-                                                                    font: String::from(&temp_text.font[..]),
-                                                                    string: temp_temp_str};
-                                    text_arr.push(return_text);
-                                    temp_string = String::new();
-                                    nth_text += 1;
-                                }
-                            };
                         }
                     }
                 }
@@ -738,7 +759,6 @@ fn main() {
 
 
 
-            println!("Slide dimensions: {:?} {:?} {:?} {:?} {}", text_ele.nth, text_ele.position, default_font_position, text_ele.string, ( text_ele.position[0] - dimensions.0 / 2.0 + ( dimensions.0 - text_ele.margin) / 2.0));
 
 
             fill_color = Color::Rgb(Rgb::new(text_ele.font_color[0] / 256.0,

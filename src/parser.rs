@@ -120,6 +120,7 @@ pub enum ConfigKwds{
     background_color,
     align,
     text,
+    tex,
     font,
     font_color,
     font_size,
@@ -128,6 +129,13 @@ pub enum ConfigKwds{
     font_style,
     font_nth,
     font_margin,
+    tex_color,
+    tex_size,
+    tex_current,
+    tex_position,
+    tex_style,
+    tex_nth,
+    tex_margin,
     image,
     image_path,
     image_position,
@@ -290,6 +298,51 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
     return_data
 }
 
+fn tex_func(parser_cursor: &mut ParserCursor)->SlideData{
+    let mut config = ConfigCard{config_data: Vec::new()};
+    if is_keyword(parser_cursor, "#tex(", true) {
+        config = gen_config_func(parser_cursor, 
+                                     &[("family", ConfigKwds::tex_current, LexType::Str),
+                                     ("size",     ConfigKwds::tex_size, LexType::Num),
+                                     ("position", ConfigKwds::tex_position, LexType::Arr),
+                                     ("color",    ConfigKwds::tex_color, LexType::Arr),
+                                     ("style",    ConfigKwds::tex_style, LexType::Str),
+                                     ("margin",   ConfigKwds::tex_margin, LexType::Num),
+                                     ],
+                                     "#tex");
+    }
+    else {
+        is_keyword(parser_cursor, "#tex", false);
+    }
+
+    let mut slide_data = SlideData{  config: Some(config),
+                               kwd: ConfigKwds::tex,
+                               data: ValueType::Err}; 
+    if parser_cursor.current() != Some('{'){
+        let data = gather_value(parser_cursor, LexType::SlideStr, None);
+        slide_data.data = data; 
+    }
+    else{
+        parser_cursor.next();
+        let mut nth = 0;
+        let mut data_string = String::new();
+        loop{
+            if parser_cursor.current() == Some('}'){
+                break;
+            }
+            else{
+                match gather_value(parser_cursor, LexType::SlideStr, None){
+                    ValueType::Str(s) =>{data_string.push_str(&s);},
+                    _ => {println!("Unexpected ValueType during Tex parsing.");}
+                }
+                parser_cursor.next();
+            }
+        }
+        slide_data.data = ValueType::Str(data_string); 
+    }
+    println!("\n\n\ntexFunc slide data!!! {:?} \n\n\n\n", slide_data);
+    slide_data
+}
 //Work in progress
 fn div_func(parser_cursor: &mut ParserCursor)->SlideData{
     println!("Div function");
@@ -306,7 +359,6 @@ fn div_func(parser_cursor: &mut ParserCursor)->SlideData{
 }
 
 fn slide_config(parser_cursor: &mut ParserCursor)->ConfigCard{
-    println!("Slide config func");
     gen_config_func(parser_cursor, &[("background_color", ConfigKwds::background_color, LexType::Arr)], "#slide")
 }
 fn slide_func(parser_cursor: &mut ParserCursor)->Card{
@@ -344,6 +396,10 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
             else if is_keyword(parser_cursor, "#image(", true) {
                 card.slide_data.push(image_func(parser_cursor));
             }
+            else if is_keyword(parser_cursor, "#tex(", true) || 
+                    is_keyword(parser_cursor, "#tex", true) {
+                card.slide_data.push(tex_func(parser_cursor));
+            }
             else {
                 card.slide_data.push( SlideData{ config: None, kwd: ConfigKwds::text, data: gather_value(parser_cursor, LexType::SlideStr, None) }); 
             }
@@ -352,6 +408,8 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
     }
     Card::SlideCard(card)
 }
+
+
 
 fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_type: Option<LexType>)->ValueType{
     match expected_type{
@@ -642,8 +700,22 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 #image(path=\"some.img\", position=[0.6,0.6])
 #font(position=[0.6, 0.55]) Oops, well we have default images :)
 
+#slide
+We can do tex functions and tables too
 
-##"
+#tex y = m x + b 
+#tex{ 
+\\begin{center}
+\\begin{tabular}{ c c c }
+ cell1 & cell2 & cell3 \\ 
+ cell4 & cell5 & cell6 \\  
+ cell7 & cell8 & cell9    
+\\end{tabular}
+\\end{center}
+}
+
+adfadf
+"
 );
 
     if let Some(s) = input_string{ slide_string = s; } else{ slide_string = example_string}

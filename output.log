@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=latex 2018.4.10)  10 APR 2018 15:24
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=latex 2018.4.10)  19 APR 2018 17:08
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -48,7 +48,8 @@ tree-dvips version .91 of May 16, 1995
 \pos@br=\toks21
 \@arrow=\count90
 \@tempdimc=\dimen111
-) (./output.aux)
+)
+No file output.aux.
 \openout1 = `output.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 4.
@@ -64,21 +65,39 @@ LaTeX Font Info:    ... okay on input line 4.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 4.
 LaTeX Font Info:    ... okay on input line 4.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <10.95> on input line 17.
+(Font)              <12> on input line 4.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 17.
+(Font)              <8> on input line 4.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 17.
- [1
+(Font)              <6> on input line 4.
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.4 ... c c c }  cell1 & cell2 & cell3 \   cell4 &
+                                                   cell5 & cell6 \    cell7 ...
+You have given more \span or & marks than there were
+in the preamble to the \halign or \valign now in progress.
+So I'll assume that you meant to type \cr instead.
+
+! Extra alignment tab has been changed to \cr.
+<recently read> \endtemplate 
+                             
+l.4 ... cell4 & cell5 & cell6 \    cell7 & cell8 &
+                                                   cell9     \end{tabular} \...
+You have given more \span or & marks than there were
+in the preamble to the \halign or \valign now in progress.
+So I'll assume that you meant to type \cr instead.
+
+[1
 
 ] (./output.aux) ) 
 Here is how much of TeX's memory you used:
- 344 strings out of 493030
- 3865 string characters out of 6136260
- 58346 words of memory out of 5000000
- 3948 multiletter control sequences out of 15000+600000
- 8844 words of font info for 31 fonts, out of 8000000 for 9000
+ 330 strings out of 493030
+ 3674 string characters out of 6136260
+ 55346 words of memory out of 5000000
+ 3940 multiletter control sequences out of 15000+600000
+ 6376 words of font info for 23 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 22i,9n,19p,135b,260s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 22i,6n,19p,288b,133s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on output.dvi (1 page, 3388 bytes).
+Output written on output.dvi (1 page, 360 bytes).

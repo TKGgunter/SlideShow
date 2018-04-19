@@ -9,18 +9,21 @@ Bugs:
 
 ToDo:
 +integrate latex tables and mathmatics rendering from an external
++how do } work when with in #font or #tex curlly brackets
 +Inline #font
 +Reconstruct how newlines are handled
 ===
 
++rewrite code such that we have main_config funcs that use element kwds data.
++Default text vertical center
++Default font position
 +div
   -> Get everything working inside divs
 +load external fonts
++more bullets options
 +Default font style should be used after it is set by user configuration
 +the created slide show file should take the markdown file name
 +Add custom default image
-+Default text vertical center
-+Default font position
 +image alpha channel integrations
 +default slide style
 +Add slide configure options default_font_family, font_size, font_color
@@ -30,10 +33,7 @@ ToDo:
 +Clean up directories
 +Better errors statements
 +add header to parser
-+bullets
-+newline
 +tabs how do they work ?
-+new paragraph vs newline <= Mar 24 they are the same
 
 
 ======================
