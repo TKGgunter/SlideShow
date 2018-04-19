@@ -19,14 +19,18 @@ pub fn run_external(){
     println!("{:?}", hello );
 }
 
-
-
-fn construct_latex_file(tex_string: Option<String>){
-    let prepend = String::from(
+fn construct_latex_file(font_color: &[f64; 3] ,tex_string: Option<String>){
+    let mut prepend = String::from(
 "\\documentclass[12pt]{article}
 \\usepackage{lingmacros}
 \\usepackage{tree-dvips}
-\\begin{document}"); 
+\\usepackage{xcolor}");
+
+    prepend.push_str(&format!("\\definecolor{{custom}}{{RGB}}{{ {}, {}, {} }}", font_color[0] as u32,
+                                                                                   font_color[1] as u32, 
+                                                                                   font_color[2] as u32));
+
+    prepend.push_str("\\begin{document}\n\\color{custom}\n");
 
     let postpend = String::from("\\end{document}");
 
@@ -50,7 +54,7 @@ fn construct_latex_file(tex_string: Option<String>){
 
 pub fn run_latex(tex_string: Option<String>)->Vec<u8>{
 
-    construct_latex_file(tex_string);
+    construct_latex_file(&[1.0, 1.0, 1.0], tex_string);
     if cfg!(target_os = "windows") {
         println!("You're shit out of luck.\nThis program is not configured to run latex on windows.");
         return vec![0u8];

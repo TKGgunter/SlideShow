@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=latex 2018.4.10)  19 APR 2018 17:08
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=latex 2018.4.10)  19 APR 2018 17:22
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -48,6 +48,25 @@ tree-dvips version .91 of May 16, 1995
 \pos@br=\toks21
 \@arrow=\count90
 \@tempdimc=\dimen111
+) (/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
+Package: xcolor 2007/01/21 v2.11 LaTeX color extensions (UK)
+
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/color.cfg
+File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
+)
+Package xcolor Info: Driver file: dvips.def on input line 225.
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/dvips.def
+File: dvips.def 2015/12/30 v3.0k Driver-dependent file (DPC,SPQR)
+)
+Package xcolor Info: Model `cmy' substituted by `cmy0' on input line 1337.
+Package xcolor Info: Model `RGB' extended on input line 1353.
+Package xcolor Info: Model `HTML' substituted by `rgb' on input line 1355.
+Package xcolor Info: Model `Hsb' substituted by `hsb' on input line 1356.
+Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1357.
+Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1358.
+Package xcolor Info: Model `Gray' substituted by `gray' on input line 1359.
+Package xcolor Info: Model `wave' substituted by `hsb' on input line 1360.
 )
 No file output.aux.
 \openout1 = `output.aux'.
@@ -65,15 +84,15 @@ LaTeX Font Info:    ... okay on input line 4.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 4.
 LaTeX Font Info:    ... okay on input line 4.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <12> on input line 4.
+(Font)              <12> on input line 6.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 4.
+(Font)              <8> on input line 6.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 4.
+(Font)              <6> on input line 6.
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
-l.4 ... c c c }  cell1 & cell2 & cell3 \   cell4 &
+l.6 ... c c c }  cell1 & cell2 & cell3 \   cell4 &
                                                    cell5 & cell6 \    cell7 ...
 You have given more \span or & marks than there were
 in the preamble to the \halign or \valign now in progress.
@@ -82,7 +101,7 @@ So I'll assume that you meant to type \cr instead.
 ! Extra alignment tab has been changed to \cr.
 <recently read> \endtemplate 
                              
-l.4 ... cell4 & cell5 & cell6 \    cell7 & cell8 &
+l.6 ... cell4 & cell5 & cell6 \    cell7 & cell8 &
                                                    cell9     \end{tabular} \...
 You have given more \span or & marks than there were
 in the preamble to the \halign or \valign now in progress.
@@ -92,12 +111,12 @@ So I'll assume that you meant to type \cr instead.
 
 ] (./output.aux) ) 
 Here is how much of TeX's memory you used:
- 330 strings out of 493030
- 3674 string characters out of 6136260
- 55346 words of memory out of 5000000
- 3940 multiletter control sequences out of 15000+600000
+ 892 strings out of 493030
+ 10115 string characters out of 6136260
+ 68597 words of memory out of 5000000
+ 4491 multiletter control sequences out of 15000+600000
  6376 words of font info for 23 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 22i,6n,19p,288b,133s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 23i,6n,35p,214b,133s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on output.dvi (1 page, 360 bytes).
+Output written on output.dvi (1 page, 504 bytes).
