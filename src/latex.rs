@@ -21,10 +21,18 @@ pub fn run_external(){
 
 fn construct_latex_file(font_color: &[f64; 3] ,tex_string: Option<String>){
     let mut prepend = String::from(
-"\\documentclass[12pt]{article}
+"\\documentclass[32pt]{article}
 \\usepackage{lingmacros}
 \\usepackage{tree-dvips}
-\\usepackage{xcolor}");
+\\usepackage{xcolor}
+\\pagestyle{empty}
+\\usepackage{geometry}
+ \\geometry{
+      a4paper,
+      total={170mm,257mm},
+      left=5mm,
+      top=5mm,
+}");
 
     prepend.push_str(&format!("\\definecolor{{custom}}{{RGB}}{{ {}, {}, {} }}", font_color[0] as u32,
                                                                                    font_color[1] as u32, 
@@ -81,11 +89,13 @@ pub fn run_dvipng(file_name: Option<String>)->Vec<u8>{
         return vec![0u8];
     } 
     let output = Command::new("dvipng")
-                        .args(&["-q", "-T tight"])
-                        .arg("output.dvi")
+                        .args(&["-T tight", "-D 640", 
+                              "-bg", "Transparent", 
+                              "output.dvi"])
                         .output()
                         .expect("failed to execute process");
 
+    //println!("{:?}", String::from_utf8(output.stdout.clone()));
     output.stdout
 }
 
@@ -101,7 +111,10 @@ pub fn clean_tex(file_name: Option<String>){
         return
     } 
     Command::new("rm")
-            .args(&[format!("{}.tex", name.clone()), format!("{}.dvi", name.clone()), format!("{}.aux", name.clone())])
+            .args(&[format!("{}.tex", name.clone()),
+                    format!("{}.dvi", name.clone()),
+                    format!("{}.aux", name.clone())
+            ])
             .output()
             .expect("failed to execute process");
 

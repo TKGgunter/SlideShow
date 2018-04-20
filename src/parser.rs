@@ -310,6 +310,7 @@ fn tex_func(parser_cursor: &mut ParserCursor)->SlideData{
                                      ("margin",   ConfigKwds::tex_margin, LexType::Num),
                                      ],
                                      "#tex");
+        parser_cursor.next();
     }
     else {
         is_keyword(parser_cursor, "#tex", false);
@@ -340,7 +341,7 @@ fn tex_func(parser_cursor: &mut ParserCursor)->SlideData{
         }
         slide_data.data = ValueType::Str(data_string); 
     }
-    println!("\n\n\ntexFunc slide data!!! {:?} \n\n\n\n", slide_data);
+    //println!("\n\n\ntexFunc slide data!!! {:?} \n\n\n\n", slide_data);
     slide_data
 }
 //Work in progress
@@ -478,7 +479,6 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_ty
                             arr.push(value);
                         }
                         else{
-                            println!("No array value given!");
                             let value = gather_value(parser_cursor, LexType::Num, None);
                             arr.push(value);
                         }
@@ -703,18 +703,16 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 #slide
 We can do tex functions and tables too
 
-#tex y = m x + b 
-#tex{ 
-\\begin{center}
+#tex $y = m x - b$
+
+#slide
+#tex(position=[0.2, 0.5]){ 
 \\begin{tabular}{ c c c }
- cell1 & cell2 & cell3 \\ 
- cell4 & cell5 & cell6 \\  
+ cell1 & cell2 & cell3 \\\\ 
+ cell4 & cell5 & cell6 \\\\  
  cell7 & cell8 & cell9    
 \\end{tabular}
-\\end{center}
 }
-
-adfadf
 "
 );
 

@@ -624,9 +624,9 @@ fn main() {
 
                     let mut temp_image = SpecialImage::new();
                     temp_image.path = String::from("output1.png");
-                    temp_image.position = [10.0, 10.0];
-                    temp_image.dimensions[0] = 5.0 * dimensions.0 ;
-                    temp_image.dimensions[1] = 5.0 * dimensions.1;
+                    temp_image.position = [10.0 * nth_text as f64, 10.0 * nth_text as f64];
+                    temp_image.dimensions[0] = 0.0;//2.0 * dimensions.0 ;
+                    temp_image.dimensions[1] = 0.0;//2.0 * dimensions.1;
                     img_arr.push(temp_image);
 
                     clean_tex(None); 

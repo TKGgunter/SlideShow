@@ -15,14 +15,14 @@ Bugs:
 
 ToDo:
 +integrate latex tables and mathmatics rendering from an external
-+how do } work when with in #font or #tex curlly brackets
 +Inline #font
 +Reconstruct how newlines are handled
 ===
 
-+rewrite code such that we have main_config funcs that use element kwds data.
++draw rectangle
 +Default text vertical center
 +Default font position
++rewrite code such that we have main_config funcs that use element kwds data.
 +div
   -> Get everything working inside divs
 +load external fonts
