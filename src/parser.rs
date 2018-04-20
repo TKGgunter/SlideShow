@@ -129,6 +129,7 @@ pub enum ConfigKwds{
     font_style,
     font_nth,
     font_margin,
+    font_align,
     tex_color,
     tex_size,
     tex_current,
@@ -255,6 +256,7 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
                                  ("color", ConfigKwds::font_color, LexType::Arr),
                                  ("style", ConfigKwds::font_style, LexType::Str),
                                  ("margin", ConfigKwds::font_margin, LexType::Num),
+                                 ("align", ConfigKwds::font_align, LexType::Str),
                                  ],
                                  "#font");
     parser_cursor.next();
@@ -294,6 +296,7 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
                 nth += 1;
             }
         }
+        return_data.reverse();
     }
     return_data
 }

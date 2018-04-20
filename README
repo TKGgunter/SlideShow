@@ -1,4 +1,5 @@
-SlideShow a slide creating program with an easy syntax, and easy work flow.
+SlideShow a slide creating program with an easy syntax, easy errors and easy work flow.
+
 For latex table and function install
 
 sudo apt-get install texlive-full
@@ -7,14 +8,23 @@ and
 
 sudo apt-get install dvipng
 
+
 News: We are in pre-alpha! What this means! Feature additions will be halted. Testing, bug squashing and error notificatoins take presedence.
 
 
 Bugs:
 +Extra slide at the very end. Why?
++bullet point shift when line is longer than margin
++adding align to font string with wrapped text makes everything write on the same line
+
+
 
 ToDo:
++change size of lex images
++table of uft-8 symbols
++server *dynamic updates to pdf with text file is saved
 +Inline #font
++font align
 +Reconstruct how newlines are handled
 ===
 
@@ -30,12 +40,8 @@ ToDo:
 +Default font style should be used after it is set by user configuration
 +the created slide show file should take the markdown file name
 +Add custom default image
-<<<<<<< HEAD
-+image alpha channel integrations
-=======
 +Default text vertical center
 +Default font position
->>>>>>> 0bdf5f587413873f0fda09db7ccab9191f238ca0
 +default slide style
 +Add slide configure options default_font_family, font_size, font_color
 +better default image position

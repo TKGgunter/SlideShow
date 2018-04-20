@@ -127,6 +127,7 @@ fn set_settings( card: &ConfigCard,
                  font_position: &mut [f64; 2],
                  font_nth: &mut i64,
                  font_margin: &mut f64,
+                 font_align: &mut Align, //Need to include this at some point
                  alignment: &mut Align,
                  image_path: &mut String,
                  image_position: &mut [f64;2],
@@ -187,6 +188,14 @@ fn set_settings( card: &ConfigCard,
                 if s.to_lowercase()      == "right"{    alignment.data = Alignment::right;}
                 else if s.to_lowercase() == "left"{     alignment.data = Alignment::left;}
                 else if s.to_lowercase() == "center"{   alignment.data = Alignment::center;}
+            };
+        }
+        else if config_data.kwd == ConfigKwds::font_align{
+
+            if let ValueType::Str(ref s) = config_data.data{
+                if s.to_lowercase()      == "right"{    font_align.data = Alignment::right;}
+                else if s.to_lowercase() == "left"{     font_align.data = Alignment::left;}
+                else if s.to_lowercase() == "center"{   font_align.data = Alignment::center;}
             };
         }
         else if config_data.kwd == ConfigKwds::font_size{
@@ -398,7 +407,7 @@ fn main() {
     //DEFAULT SETINGS
     //16:9
     let mut dimensions = (338.7,190.5);
-    let mut default_slide_color = [256.0, 256.0, 256.0];
+    let mut default_slide_color = [255.0, 255.0, 255.0];
     let mut default_font_family = "times";
     let mut default_font_color = [0.0, 0.0, 0.0];
     let mut default_font_position = [20.0, 20.0];
@@ -490,6 +499,7 @@ fn main() {
             let mut temp_font_pos = [-1.0, -1.0];
             let mut temp_font_nth = -1;
             let mut temp_font_margin = dimensions.0;
+            let mut temp_font_alignment = Align{data: Alignment::default};
             let mut temp_image_path = String::new();
             let mut temp_image_pos = [0.0, 0.0];
             let mut temp_image_width = 0.0;
@@ -504,6 +514,7 @@ fn main() {
                                 &mut temp_font_pos, 
                                 &mut temp_font_nth, 
                                 &mut temp_font_margin, 
+                                &mut temp_font_alignment, 
                                 &mut default_alignment,
                                 &mut temp_image_path,
                                 &mut temp_image_pos,
@@ -534,6 +545,7 @@ fn main() {
                 let mut temp_font_pos = [-1.0, -1.0];
                 let mut temp_font_nth = -1;
                 let mut temp_font_margin = dimensions.0;
+                let mut temp_font_alignment = Align{data: Alignment::default}; 
                 let mut temp_alignment = Align{data: Alignment::left}; 
                 let mut temp_image_path = String::new();
                 let mut temp_image_pos = [0.0, 0.0];
@@ -550,6 +562,7 @@ fn main() {
                              &mut temp_font_pos,
                              &mut temp_font_nth,
                              &mut temp_font_margin,
+                             &mut temp_font_alignment,
                              &mut temp_alignment,
                              &mut temp_image_path,
                              &mut temp_image_pos,
@@ -581,6 +594,7 @@ fn main() {
                     let mut temp_font_nth = -1;
                     let mut temp_font_margin = dimensions.0;
                     let mut temp_font_size = -1; 
+                    let mut temp_font_alignment = Align{data: Alignment::default}; 
                     let mut temp_alignment = Align{data: Alignment::left}; 
                     let mut temp_image_path = String::new();
                     let mut temp_image_pos = [0.0, 0.0];
@@ -597,6 +611,7 @@ fn main() {
                                  &mut temp_font_pos,
                                  &mut temp_font_nth,
                                  &mut temp_font_margin,
+                                 &mut temp_font_alignment,
                                  &mut temp_alignment,
                                  &mut temp_image_path,
                                  &mut temp_image_pos,
@@ -604,11 +619,11 @@ fn main() {
                                  &mut temp_image_height,
                                  );
 
-                    temp_text.align = temp_alignment.data;
+                    temp_text.align = if temp_font_alignment.data == Alignment::default{ temp_alignment.data } else { temp_font_alignment.data };
                     temp_text.font_size = temp_font_size;
                     temp_text.font_color = temp_font_color;
                     temp_text.position = temp_font_pos;
-                    temp_text.font = temp_font_current;
+                    temp_text.font = if temp_font_current == String::from("") {String::from(default_font_family)} else{temp_font_current};
                     temp_text.nth = temp_font_nth;
                     if temp_text.nth > -1 { nth_text = temp_text.nth;}
                     temp_text.margin = temp_font_margin;
@@ -847,6 +862,8 @@ fn main() {
                 }
             }
 
+
+            println!("nth: {} \t string: \t {}", text_ele.nth, text_ele.string);
 
             current_layer.set_font(font_book.get(current_font).unwrap(), text_ele.font_size);
             if text_ele.align == Alignment::left{
