@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=latex 2018.4.10)  19 APR 2018 20:59
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian) (preloaded format=latex 2018.4.10)  19 APR 2018 21:55
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**output.tex
-(./output.tex
+**output_0.tex
+(./output_0.tex
 LaTeX2e <2016/02/01>
 Babel <3.9q> and hyphenation patterns for 81 language(s) loaded.
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
@@ -103,8 +103,8 @@ Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
 LaTeX Warning: Unused global option(s):
     [32pt].
 
-No file output.aux.
-\openout1 = `output.aux'.
+No file output_0.aux.
+\openout1 = `output_0.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 12.
 LaTeX Font Info:    ... okay on input line 12.
@@ -158,14 +158,14 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <5> on input line 14.
 [1
 
-] (./output.aux) ) 
+] (./output_0.aux) ) 
 Here is how much of TeX's memory you used:
- 1393 strings out of 493030
- 17607 string characters out of 6136260
+ 1394 strings out of 493030
+ 17627 string characters out of 6136260
  82801 words of memory out of 5000000
  4983 multiletter control sequences out of 15000+600000
  3640 words of font info for 14 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 23i,6n,35p,165b,110s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 23i,5n,35p,162b,110s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on output.dvi (1 page, 532 bytes).
+Output written on output_0.dvi (1 page, 528 bytes).

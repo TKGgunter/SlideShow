@@ -96,6 +96,25 @@ fn render_right_aligned_text( current_layer: &PdfLayerReference, text: &String, 
 
 
 
+fn set_tex_settings( card: &ConfigCard, 
+                 tex_position: &mut [f64; 2],){
+    for config_data in card.config_data.iter(){
+        if config_data.kwd == ConfigKwds::tex_position{
+            let mut temp_arr = Vec::new(); 
+            if let ValueType::Arr(ref array) = config_data.data{
+                for element in array.iter(){
+                    if let &ValueType::Num(ref num) = element{
+                        temp_arr.push(num + 0.0);
+                    }
+                }
+            }
+            if temp_arr.len() == 2{
+                tex_position[0] = temp_arr[0];
+                tex_position[1] = temp_arr[1];
+            }
+        }
+    }
+}
 
 fn set_settings( card: &ConfigCard, 
                  dimensions: &mut (f64, f64), 
@@ -371,8 +390,6 @@ static FONT_TIMES_BOLDITALIC: &'static [u8] =  include_bytes!("FreeSerif/FreeSer
 fn main() {
 
     run_external();
-    println!("\u{2022} {:?} {:?}", run_latex(None), run_dvipng(None));
-    clean_tex(None);
 
     let ft_lib = match freetype::Library::init(){ Ok(lib)=>{lib}, Err(e)=>{panic!("FreeType could not load: {:?}", e)}};
     let ft_default_face = match ft_lib.new_memory_face(FONT_TIMES, 0) { Ok(face) => {face}, Err(e) => {panic!("Ft face could not be loaded {:?}", e)}};
@@ -393,7 +410,7 @@ fn main() {
     let mut some_font_size   : Option<f64> = None;
     let mut some_alignment   : Option<Alignment>= None;
 
-
+    let mut tex_number = 0;
 
  ///////////////////////////////////////////////////
     let image_data = load_image(&SpecialImage{ align: Alignment::default, 
@@ -614,22 +631,28 @@ fn main() {
                 //Eveything should be framed in this manner
                 if element.kwd == ConfigKwds::tex{
 
+                    let mut temp_tex_pos = [10.0, 10.0];
+                    if let Some(ref config) = element.config{
+                        set_tex_settings(config, &mut temp_tex_pos);
+                    }
+
                     if let ValueType::Str(ref s) = element.data{
-                        run_latex(Some(s.clone()));
+                        run_latex(Some(s.clone()), format!("output_{}", tex_number));
                     }
                     else{
-                        run_latex(None);
+                        run_latex(None, format!("output_{}", tex_number));
                     }
-                    run_dvipng(None);
+                    run_dvipng(format!("output_{}", tex_number));
 
                     let mut temp_image = SpecialImage::new();
-                    temp_image.path = String::from("output1.png");
-                    temp_image.position = [10.0 * nth_text as f64, 10.0 * nth_text as f64];
+                    temp_image.path = format!("output_{}1.png", tex_number);
+                    temp_image.position = temp_tex_pos;
                     temp_image.dimensions[0] = 0.0;//2.0 * dimensions.0 ;
                     temp_image.dimensions[1] = 0.0;//2.0 * dimensions.1;
                     img_arr.push(temp_image);
 
-                    clean_tex(None); 
+                    clean_tex(Some(format!("output_{}", tex_number))); 
+                    tex_number += 1;
                 }
                 else{
                     if let ValueType::Str(ref string) = element.data{

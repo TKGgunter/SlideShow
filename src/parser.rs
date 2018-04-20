@@ -705,7 +705,6 @@ We can do tex functions and tables too
 
 #tex $y = m x - b$
 
-#slide
 #tex(position=[0.2, 0.5]){ 
 \\begin{tabular}{ c c c }
  cell1 & cell2 & cell3 \\\\ 

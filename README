@@ -14,7 +14,6 @@ Bugs:
 +Extra slide at the very end. Why?
 
 ToDo:
-+integrate latex tables and mathmatics rendering from an external
 +Inline #font
 +Reconstruct how newlines are handled
 ===
@@ -22,6 +21,7 @@ ToDo:
 +draw rectangle
 +Default text vertical center
 +Default font position
++latex configuration stuffs
 +rewrite code such that we have main_config funcs that use element kwds data.
 +div
   -> Get everything working inside divs
