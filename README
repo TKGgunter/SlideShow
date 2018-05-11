@@ -16,17 +16,19 @@ Bugs:
 +Extra slide at the very end. Why?
 +bullet point shift when line is longer than margin
 +adding align to font string with wrapped text makes everything write on the same line
-
++color with fractional values <- doesn't work not sure if this is a bug
++font right align
 
 
 ToDo:
-+change size of lex images
++change size of lex images => coupled length width size change in fractions.
++color with fractional values
 +table of uft-8 symbols
 +draw rectangle
 +page number
++Too damn slow in card generation
 +Add custom default image
 +server *dynamic updates to pdf with text file is saved
-+font align
 +Reconstruct how newlines are handled
 +load external fonts
 +Inline #font

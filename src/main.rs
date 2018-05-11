@@ -116,6 +116,109 @@ fn set_tex_settings( card: &ConfigCard,
     }
 }
 
+
+fn load_arr( value: &ValueType, expected_size: usize)->Option<Vec<f64>>{
+    let mut temp_array = Vec::new();
+    if let ValueType::Arr(ref array) = config_data.data{
+        for (it, element) in array.iter().enumerate(){
+            if let &ValueType::Num(ref number) = element{
+                temp_array.push(number + 0.0);
+            }
+            else{
+                println!("Unexpected Value type in Configuration");
+            }
+        }
+    }
+    else{
+        println!("Unexpected Value type in Configuration");
+    }
+
+    if temp_array.len() != expected_size{
+        return None; 
+    }
+    else{
+        return temp_array;
+    }
+}
+
+fn _set_settings( card: &ConfigCard, 
+                 dimensions: &mut (f64, f64),  //<- Needs to be implemented
+                 background_color: &mut [f64;3],
+                 font_color: &mut [f64;3],
+                 font_size: &mut i64,
+                 font_family: &mut [String; 2],
+                 ){
+    for config_data in card.config_data.iter(){
+        if config_data.kwd == ConfigKwds::background_color{
+            
+            let mut temp_array = Vec::new();
+            if let ValueType::Arr(ref array) = config_data.data{
+                for (it, element) in array.iter().enumerate(){
+                    if let &ValueType::Num(ref number) = element{
+                        temp_array.push(number + 0.0);
+                    }
+                    else{
+                        println!("Unexpected Value type in Configuration");
+                    }
+                }
+            }
+            else{
+                println!("Unexpected Value type in Configuration");
+            }
+
+            if temp_array.len() == 3{
+                background_color[0] = temp_array[0];
+                background_color[1] = temp_array[1];
+                background_color[2] = temp_array[2];
+            }
+        } 
+        else if config_data.kwd == ConfigKwds::font_color{
+            
+            let mut temp_array = Vec::new();
+            if let ValueType::Arr(ref array) = config_data.data{
+                for (it, element) in array.iter().enumerate(){
+                    if let &ValueType::Num(ref number) = element{
+                        temp_array.push(number + 0.0);
+                    }
+                    else{
+                        println!("Unexpected Value type in Configuration");
+                    }
+                }
+            }
+            else{
+                println!("Unexpected Value type in Configuration");
+            }
+
+            if temp_array.len() == 3{
+                font_color[0] = temp_array[0];
+                font_color[1] = temp_array[1];
+                font_color[2] = temp_array[2];
+            }
+        } 
+        else if config_data.kwd == ConfigKwds::font_size{
+
+             if let ValueType::Num(ref num) = config_data.data{
+                 *font_size = (num + 0.0) as i64; 
+             }
+        }
+        else if config_data.kwd == ConfigKwds::font{
+
+            let mut temp_array = Vec::new();
+            if let ValueType::Arr(ref array) = config_data.data{
+                for element in array.iter(){
+                    if let &ValueType::Str(ref string) = element{
+                        temp_array.push(format!("{}", string));
+                    }
+                }
+            }
+            if temp_array.len() == 2{
+               font_family[0] = format!("{}", temp_array[0]); 
+               font_family[1] = format!("{}", temp_array[1]); 
+            }
+        }
+    }
+}
+
 fn set_settings( card: &ConfigCard, 
                  dimensions: &mut (f64, f64), 
                  background_color: &mut [f64;3],
@@ -904,6 +1007,7 @@ fn main() {
 
     //Testing area
     Image::from(image_data).add_to_layer(current_layer.clone(), Some(100.0), Some(100.0), None, Some(0.5), Some(0.5), None); //Defauct
+/*
     current_layer.use_text("\u{2022} ASDFADFAD", 32, 20.0, 20.0, font_book.get("times").unwrap());
 
     current_layer.begin_text_section();
@@ -922,7 +1026,7 @@ fn main() {
     current_layer.set_text_cursor(0.0,0.0);
     current_layer.write_text("RETEWRTW ", font_book.get(&"times_italic").unwrap());
     current_layer.end_text_section();
-    //
+    */
 
     let _pdf_name : Vec<&str> = file_name.split(".").collect();
     let mut pdf_name : String = String::from(_pdf_name[0]);
