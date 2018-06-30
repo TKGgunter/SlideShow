@@ -13,7 +13,7 @@
 extern crate ansi_term;
 
 struct ParserCursor{
-    file_string: String,
+    file_string: Vec<char>,
     col: usize,
     row: usize,
     pos: usize, 
@@ -23,9 +23,9 @@ struct ParserCursor{
 }
 
 impl ParserCursor{
-    fn new()->ParserCursor{
+    fn new(file_string: String)->ParserCursor{
         ParserCursor{
-            file_string: String::from(""),
+            file_string: file_string.chars().collect(),
             col: 0,
             row: 0,
             pos: 0,
@@ -38,9 +38,8 @@ impl ParserCursor{
 
     //I SHOULD NOT BE REMAKEING THESE COLLECTIONS EVERY TIME WANT THE NEXT OR CURRENT CHARACTER
     fn peek(&self)->Option<char>{
-        let arr_char: Vec<char> = self.file_string.chars().collect();
-        if self.pos + 1 < arr_char.len(){
-            Some(arr_char[self.pos + 1])
+        if self.pos + 1 < self.file_string.len(){
+            Some(self.file_string[self.pos + 1])
         }
         else{
             println!("Ran out of space to peek");
@@ -49,9 +48,8 @@ impl ParserCursor{
     }
 
     fn current(&mut self)->Option<char>{
-        let arr_char: Vec<char> = self.file_string.chars().collect();
-        if self.pos < arr_char.len(){
-            Some(arr_char[self.pos])
+        if self.pos < self.file_string.len(){
+            Some(self.file_string[self.pos])
         }
         else{
             println!("Ran out of space to current");
@@ -60,19 +58,18 @@ impl ParserCursor{
     }
 
     fn next(&mut self)->Option<char>{
-        let arr_char: Vec<char> = self.file_string.chars().collect();
         self.prev_col = self.col;
         self.prev_row = self.row;
         self.prev_pos = self.pos;
-        if self.pos + 1 < arr_char.len(){
+        if self.pos + 1 < self.file_string.len(){
             self.pos += 1;
-            if arr_char[self.pos] == '\n'{
+            if self.file_string[self.pos] == '\n'{
                 self.row += 1;
             }
             else{
                 self.col += 1;
             }
-            Some(arr_char[self.pos])
+            Some(self.file_string[self.pos])
         }
         else{
             None
@@ -91,58 +88,28 @@ impl ParserCursor{
 
 }
 
+
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum LexType{
-    Punc,
     Num,
     Str,
-    Kw,
-    Var,
-    Op,
-    Id,
     Arr,
     SlideStr,
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum ValueType{
-    Num(f64),
-    Str(String),
-    Arr(Vec<ValueType>),
-    Err,
+
+#[derive(Debug, PartialEq)]
+pub enum Card{
+    SlideCard(SlideCard),
+    ConfigCard(ConfigCard),
+    Default,
 }
 
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum ConfigKwds{
-    width,
-    height,
-    background_color,
-    align,
-    text,
-    tex,
-    font,
-    font_color,
-    font_size,
-    font_current,
-    font_position,
-    font_style,
-    font_nth,
-    font_margin,
-    font_align,
-    tex_color,
-    tex_size,
-    tex_current,
-    tex_position,
-    tex_style,
-    tex_nth,
-    tex_margin,
-    image,
-    image_path,
-    image_position,
-    image_width,
-    image_height,
-    default,
+#[derive(Debug, PartialEq)]
+pub struct SlideCard{
+    pub config: Option<ConfigCard>,
+    pub slide_data: Vec<SlideData>,
 }
 
 
@@ -163,28 +130,85 @@ pub struct SlideData{
     pub kwd: ConfigKwds,
     pub data: ValueType,
 }
-#[derive(Debug, PartialEq)]
-pub struct SlideCard{
-    pub config: Option<ConfigCard>,
-    pub slide_data: Vec<SlideData>,
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum ValueType{
+    Num(f64),
+    Str(String),
+    Arr(Vec<ValueType>),
+    Err,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum ConfigKwds{
+    slide_width,
+    slide_height,
+    slide_background_color,
+    align,
+
+    text,
+
+    div,
+    div_background_color,
+    div_width,
+    div_height,
+
+    font,
+    font_color,
+    font_size,
+    font_current,
+    font_position,
+    font_style,
+    font_nth,
+    font_margin,
+    font_align,
+
+    latex,
+    latex_color,
+    latex_size,
+    latex_current,
+    latex_position,
+    latex_style,
+    latex_nth,
+    latex_margin,
+
+    image,
+    image_path,
+    image_position,
+    image_width,
+    image_height,
+
+    default,
+}
+
+impl SlideCard{
+    pub fn print(&self){
+        println!("Slides: ");
+        for (i, iter) in self.slide_data.iter().enumerate(){
+            println!("Slide Number {}", i);
+            println!("\t Data type: {:?}\n\t Key: {:?}", iter.data, iter.kwd);
+            match self.config{
+                Some(ref config_card) => config_card.print(),
+                _=>{}
+            }
+        }
+    }
+}
+impl ConfigCard{
+    pub fn print(&self){
+        println!("\t\tConfigure: ");
+        for (i, iter) in self.config_data.iter().enumerate(){
+            println!("\t\t\tKeywords: {:?}\t data: {:?}", iter.kwd, iter.data);
+        }
+    }
 }
 
 
-#[derive(Debug, PartialEq)]
-pub enum Card{
-    SlideCard(SlideCard),
-    ConfigCard(ConfigCard),
-    Default,
-}
 
 
 
-static ACC_PUNC: [char; 7]  =  ['{', '}', '(', ')', '.', ',', ';'];
 static ACC_NUM:  [char; 10] =  ['0','1','2','3','4','5','6','7','8','9'];
-static ACC_OP:   [&str; 5]  =  ["=","+", "-", "/", "*"];
-static ACC_STR:  [char; 1]  =  ['"'];
-static ACC_ID:   [char; 1]  =  ['#'];
-
+static KEYWORD_IDENTIFIER:   [char; 1]  =  ['#'];
 static WHITE_SPACE:[char; 3] = [' ','\t', '\n'];
 
 fn parse_error(message: &str, parser_cursor: &ParserCursor){
@@ -305,12 +329,12 @@ fn tex_func(parser_cursor: &mut ParserCursor)->SlideData{
     let mut config = ConfigCard{config_data: Vec::new()};
     if is_keyword(parser_cursor, "#tex(", true) {
         config = gen_config_func(parser_cursor, 
-                                     &[("family", ConfigKwds::tex_current, LexType::Str),
-                                     ("size",     ConfigKwds::tex_size, LexType::Num),
-                                     ("position", ConfigKwds::tex_position, LexType::Arr),
-                                     ("color",    ConfigKwds::tex_color, LexType::Arr),
-                                     ("style",    ConfigKwds::tex_style, LexType::Str),
-                                     ("margin",   ConfigKwds::tex_margin, LexType::Num),
+                                     &[("family", ConfigKwds::latex_current, LexType::Str),
+                                     ("size",     ConfigKwds::latex_size, LexType::Num),
+                                     ("position", ConfigKwds::latex_position, LexType::Arr),
+                                     ("color",    ConfigKwds::latex_color, LexType::Arr),
+                                     ("style",    ConfigKwds::latex_style, LexType::Str),
+                                     ("margin",   ConfigKwds::latex_margin, LexType::Num),
                                      ],
                                      "#tex");
         parser_cursor.next();
@@ -320,7 +344,7 @@ fn tex_func(parser_cursor: &mut ParserCursor)->SlideData{
     }
 
     let mut slide_data = SlideData{  config: Some(config),
-                               kwd: ConfigKwds::tex,
+                               kwd: ConfigKwds::latex,
                                data: ValueType::Err}; 
     if parser_cursor.current() != Some('{'){
         let data = gather_value(parser_cursor, LexType::SlideStr, None);
@@ -363,7 +387,7 @@ fn div_func(parser_cursor: &mut ParserCursor)->SlideData{
 }
 
 fn slide_config(parser_cursor: &mut ParserCursor)->ConfigCard{
-    gen_config_func(parser_cursor, &[("background_color", ConfigKwds::background_color, LexType::Arr)], "#slide")
+    gen_config_func(parser_cursor, &[("background_color", ConfigKwds::slide_background_color, LexType::Arr)], "#slide")
 }
 fn slide_func(parser_cursor: &mut ParserCursor)->Card{
     let mut card = SlideCard{config:None, slide_data:Vec::new()};
@@ -535,9 +559,9 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_ty
 fn config_func(parser_cursor: &mut ParserCursor)->Card{
     use self::LexType::*;
     let card = gen_config_func(parser_cursor,
-                     &[("width", ConfigKwds::width, Num),
-                       ("height", ConfigKwds::height, Num),
-                       ("background_color", ConfigKwds::background_color, Arr),
+                     &[("width", ConfigKwds::slide_width, Num),
+                       ("height", ConfigKwds::slide_height, Num),
+                       ("background_color", ConfigKwds::slide_background_color, Arr),
                        ("align", ConfigKwds::align, Str),
                        ("font", ConfigKwds::font, Str),
                        ("font_color", ConfigKwds::font_color, Arr)],
@@ -612,7 +636,7 @@ fn gen_config_func(parser_cursor: &mut ParserCursor, config_keywords: &[(&str, C
                 if value == LexType::Arr{ 
                     if kwd == ConfigKwds::font{ arr_lextype = Some(LexType::Str);}
                     else if kwd == ConfigKwds::font_color{ arr_lextype = Some(LexType::Num);}
-                    else if kwd == ConfigKwds::background_color{ arr_lextype = Some(LexType::Num);}
+                    else if kwd == ConfigKwds::slide_background_color{ arr_lextype = Some(LexType::Num);}
                 } 
                 let gathered_value = gather_value(parser_cursor, value, arr_lextype);
 
@@ -634,14 +658,14 @@ fn read_contents(parser_cursor: &mut ParserCursor)->Card{
     //words, look out for other ID funcs 
     let mut card = Card::Default;
     let current_char = parser_cursor.current().unwrap();
-    if ACC_ID.contains(&current_char){ 
+    if KEYWORD_IDENTIFIER.contains(&current_char){ 
         if is_slide(parser_cursor) { card = slide_func(parser_cursor); }
         if is_config(parser_cursor){ card = config_func(parser_cursor); } 
     }
     return card;
 }
 
-pub fn example(input_string: Option<String>)->Vec<Card>{
+pub fn construct_document(input_string: Option<String>)->Vec<Card>{
 
     let mut slide_string = String::new();
     let example_string = String::from(
@@ -649,83 +673,17 @@ pub fn example(input_string: Option<String>)->Vec<Card>{
 //Thoth Gunter
 //Rust style comments
 
-
-#config(
-width = 254.0,
-height = 190.5,
-background_color = [100,0,100], //array style
-font = [\"Times\", \"ASDF/aSDFA/FASDFA\"],
-font_color = [200, 200, 200],
-align = \"center\"
-extern= \"/path\"
-)
-
-
-#slide
-a
-
-We can write a slide like this. 
-No need for a bracketted structure.
-
-We can create a paragraph with consecutive \\n\\n.
-We can create a new line with #newline
-
-
-#slide(background_color= [150,0,150])
-We can also change slide configurations for specific slides
-
-#slide
-#font(size=42) We can do different sized text
-#font(position=[0.3, 0.5], color=[200,50,50]) Place text where you want
-#font(family=\"Times\", size=32, style=\"bold\", position=[0.2, 0.2]) We can change fonts!
-
-#slide
-#font(position=[122, 40], margin=0.5){
-Something, something, something else and another thing
-
-ASDFAF
-}
-
-#slide
-We can even add images
-#image(path=\"/some/path\")
-#image(path=\"/some/path\", position=[0.7, 0.1], width=0.8, height=0.8)
-
-#slide(background_color=[50,0,50])
-New slides are easy!
-#bul So are images!
-#font(position=[0.9, 0.9]){
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-}
-
-#font(position=[0.2,0.5], size=32) And we have auto wrap!
-
-#image(path=\"some.img\", position=[0.6,0.6])
-#font(position=[0.6, 0.55]) Oops, well we have default images :)
-
-#slide
-We can do tex functions and tables too
-
-#tex $y = m x - b$
-
-#tex(position=[0.2, 0.5]){ 
-\\begin{tabular}{ c c c }
- cell1 & cell2 & cell3 \\\\ 
- cell4 & cell5 & cell6 \\\\  
- cell7 & cell8 & cell9    
-\\end{tabular}
-}
+//Currently in temp
 "
 );
 
     if let Some(s) = input_string{ slide_string = s; } else{ slide_string = example_string}
-    let mut parser_cursor = ParserCursor::new();
     slide_string = remove_comments(slide_string);
     slide_string = replace_bullet(slide_string);
 
-    parser_cursor.file_string = slide_string;
+    let mut parser_cursor = ParserCursor::new(slide_string);
 
-    println!("FILE:\n\n{}\n\nBEGINNING CARD GENERATION", parser_cursor.file_string);
+    println!("FILE:\n\n{:?}\n\nBEGINNING CARD GENERATION", parser_cursor.file_string);
 
     let mut chars = Vec::<char>::new();
     let mut document_structure = Vec::<Card>::new();
