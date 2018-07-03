@@ -1,12 +1,17 @@
 //Thoth Gunter
 
-//ToDo:
+//TODO:
+//I need a better way to work with single line alterations.  
+//Some way that makes it clear to the next step that the following come on the same line.
+//Maybe a second pass through the char array.
+
+
 //div
-//image path 
-//=======Move to Slide Show ================
-//latex strings
-//headers, bullets, newline <= for new line we might not need to do any thing, but we must remove
+//working with newlines
+//headers, bullets, newline 
 //\n and \t s.
+//image path 
+//latex strings
 
 
 #![allow(dead_code)]
@@ -36,7 +41,6 @@ impl ParserCursor{
     }
 
 
-    //I SHOULD NOT BE REMAKEING THESE COLLECTIONS EVERY TIME WANT THE NEXT OR CURRENT CHARACTER
     fn peek(&self)->Option<char>{
         if self.pos + 1 < self.file_string.len(){
             Some(self.file_string[self.pos + 1])
@@ -99,6 +103,9 @@ pub enum LexType{
 }
 
 
+
+
+//TODO: Maybe the enum name should not be the same as the struct names
 #[derive(Debug, PartialEq)]
 pub enum Card{
     SlideCard(SlideCard),
@@ -147,6 +154,8 @@ pub enum ConfigKwds{
     align,
 
     text,
+    text_position,
+    text_align,
 
     div,
     div_background_color,
@@ -157,11 +166,9 @@ pub enum ConfigKwds{
     font_color,
     font_size,
     font_current,
-    font_position,
     font_style,
     font_nth,
     font_margin,
-    font_align,
 
     latex,
     latex_color,
@@ -184,22 +191,29 @@ pub enum ConfigKwds{
 impl SlideCard{
     pub fn print(&self){
         println!("Slides: ");
+        match self.config{
+            Some(ref config_card) => config_card.print(),
+            _=>{}
+        }
         for (i, iter) in self.slide_data.iter().enumerate(){
-            println!("Slide Number {}", i);
-            println!("\t Data type: {:?}\n\t Key: {:?}", iter.data, iter.kwd);
-            match self.config{
+            println!("Slide Data {}", i);
+            println!("\t Data type: {:?}\n\t Key: {:?}", iter.data, iter.kwd);  
+            match iter.config{
                 Some(ref config_card) => config_card.print(),
                 _=>{}
+                
             }
         }
     }
 }
+
 impl ConfigCard{
     pub fn print(&self){
-        println!("\t\tConfigure: ");
+        println!("\n\t\tConfigure: ");
         for (i, iter) in self.config_data.iter().enumerate(){
             println!("\t\t\tKeywords: {:?}\t data: {:?}", iter.kwd, iter.data);
         }
+        println!("\n");
     }
 }
 
@@ -261,8 +275,7 @@ fn image_func(parser_cursor: &mut ParserCursor)->SlideData{
                                  &[("path", ConfigKwds::image_path, LexType::Str),
                                  ("position", ConfigKwds::image_position, LexType::Arr),
                                  ("width", ConfigKwds::image_width, LexType::Num),
-                                 ("height", ConfigKwds::image_height, LexType::Num),
-],
+                                 ("height", ConfigKwds::image_height, LexType::Num),],
                                  "#image");
     parser_cursor.next();
     let slide_data = ValueType::Err; 
@@ -276,21 +289,23 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
     let mut config = gen_config_func(parser_cursor, 
                                  &[("family", ConfigKwds::font_current, LexType::Str),
                                  ("size", ConfigKwds::font_size, LexType::Num),
-                                 ("position", ConfigKwds::font_position, LexType::Arr),
+                                 ("position", ConfigKwds::text_position, LexType::Arr),
                                  ("color", ConfigKwds::font_color, LexType::Arr),
                                  ("style", ConfigKwds::font_style, LexType::Str),
                                  ("margin", ConfigKwds::font_margin, LexType::Num),
-                                 ("align", ConfigKwds::font_align, LexType::Str),
+                                 ("align", ConfigKwds::text_align, LexType::Str),
                                  ],
                                  "#font");
     parser_cursor.next();
+/* //Not sure what this was good for
+   //TODO: Clean up maybe
     for i in 0..config.config_data.len(){
-        if config.config_data[i].kwd == ConfigKwds::font_position{
+        if config.config_data[i].kwd == ConfigKwds::text_position{
             config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(0.0)});
             break;
         }
     }
-
+*/
     let mut return_data = Vec::new();
     if parser_cursor.current() != Some('{'){
         config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(0.0)});
@@ -543,12 +558,22 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_ty
                         if p == '#' { break; }
                         if p == '}' { break; }
                     } else {break;}
-                    if parser_cursor.next() == None { break; } //Redunant?
+                    if parser_cursor.next() == None { break; } //Redunent?
                     value.push(' ');
                     continue; 
                 }
+
+                ///////// TODO:  In line alterations
+                if parser_cursor.peek().unwrap() == '#' && parser_cursor.current().unwrap() == ' '{
+                    if is_keyword(parser_cursor ," #font", true){
+                        println!("I would break here!");
+                        break;
+                    }
+                }
+                /////////
+
                 value.push(parser_cursor.current().unwrap());
-                if parser_cursor.next() == None {break; };
+                if parser_cursor.next() == None { break; };
             }
             ValueType::Str(value)
         },
@@ -602,8 +627,6 @@ fn gen_config_func(parser_cursor: &mut ParserCursor, config_keywords: &[(&str, C
                         value = keyword_value.2;
                         kwd = keyword_value.1;
 
-                        //println!("Is a Keyword: {:?} {:?}", keyword, value);
-                        
                         card.config_data.push(ConfigData{kwd: keyword_value.1, data: ValueType::Err} );
                         parser_cursor.previous();
                         break;
@@ -627,16 +650,16 @@ fn gen_config_func(parser_cursor: &mut ParserCursor, config_keywords: &[(&str, C
 
                 let error_str = format!("Unexpected character: \"{}\", expected \"=\".", parser_cursor.current().unwrap());
                 parse_error(&error_str, parser_cursor);
-                card.config_data[index] = ConfigData{ kwd: kwd, data: ValueType::Err};
+                card.config_data[index] = ConfigData{ kwd: kwd, data: ValueType::Err };
                 keyword_primed = false;
             } 
             else{
                 parser_cursor.next(); 
                 let mut arr_lextype: Option<LexType> = None;
                 if value == LexType::Arr{ 
-                    if kwd == ConfigKwds::font{ arr_lextype = Some(LexType::Str);}
-                    else if kwd == ConfigKwds::font_color{ arr_lextype = Some(LexType::Num);}
-                    else if kwd == ConfigKwds::slide_background_color{ arr_lextype = Some(LexType::Num);}
+                    if kwd == ConfigKwds::font{ arr_lextype = Some(LexType::Str); }
+                    else if kwd == ConfigKwds::font_color{ arr_lextype = Some(LexType::Num); }
+                    else if kwd == ConfigKwds::slide_background_color{ arr_lextype = Some(LexType::Num); }
                 } 
                 let gathered_value = gather_value(parser_cursor, value, arr_lextype);
 
@@ -674,6 +697,35 @@ pub fn construct_document(input_string: Option<String>)->Vec<Card>{
 //Rust style comments
 
 //Currently in temp
+
+#config(
+width = 254.0,
+height = 190.5,
+background_color = [100,0,100], //array style
+font = [\"Times\", \"ASDF/aSDFA/FASDFA\"],
+font_color = [200, 200, 200],
+align = \"center\"
+extern= \"/path\"
+)
+
+
+#slide
+We can write a slide like this. 
+No need for a bracketted structure.
+
+We can create a paragraph with consecutive \\n\\n.
+We can create a new line with #newline
+
+
+#slide(background_color= [150,0,150])
+  We can also change slide configurations for specific slides
+
+
+#slide
+#font(size=42) We can do different sized text #font(color=[200,50,50]) Diff font color
+
+#font(family=\"Times\", size=32, style=\"bold\", position=[0.2, 0.2]) We can place text.
+
 "
 );
 
@@ -706,6 +758,9 @@ pub fn construct_document(input_string: Option<String>)->Vec<Card>{
 }
 
 
+
+
+//TODO: These functions are heavy on memory usage :(
 fn remove_comments(contents: String)->String{
     let mut clean_contents = String::new();
     for line in contents.split('\n'){
@@ -738,3 +793,7 @@ fn replace_bullet(contents: String)->String{
     clean_contents = contents.replace("\n#bul ", "\n\n\u{2022} ");
     clean_contents
 }
+
+
+
+
