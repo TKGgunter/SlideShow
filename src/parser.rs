@@ -1,10 +1,8 @@
 //Thoth Gunter
-
+//
 //TODO:
-//I need a better way to work with single line alterations.  
-//Some way that makes it clear to the next step that the following come on the same line.
-//Maybe a second pass through the char array.
-
+//something about divs
+//
 
 //div
 //working with newlines
@@ -136,6 +134,7 @@ pub struct SlideData{
     pub config: Option<ConfigCard>,
     pub kwd: ConfigKwds,
     pub data: ValueType,
+    pub text_row: usize,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -153,6 +152,10 @@ pub enum ConfigKwds{
     slide_background_color,
     align,
 
+    header1,
+    header2,
+    header3,
+
     text,
     text_position,
     text_align,
@@ -161,6 +164,8 @@ pub enum ConfigKwds{
     div_background_color,
     div_width,
     div_height,
+    div_position,
+    div_nth,
 
     font,
     font_color,
@@ -197,7 +202,7 @@ impl SlideCard{
         }
         for (i, iter) in self.slide_data.iter().enumerate(){
             println!("Slide Data {}", i);
-            println!("\t Data type: {:?}\n\t Key: {:?}", iter.data, iter.kwd);  
+            println!("\t Data type: {:?}\n\t Key: {:?}\n\t Row: {}", iter.data, iter.kwd, iter.text_row);  
             match iter.config{
                 Some(ref config_card) => config_card.print(),
                 _=>{}
@@ -224,6 +229,7 @@ impl ConfigCard{
 static ACC_NUM:  [char; 10] =  ['0','1','2','3','4','5','6','7','8','9'];
 static KEYWORD_IDENTIFIER:   [char; 1]  =  ['#'];
 static WHITE_SPACE:[char; 3] = [' ','\t', '\n'];
+static HEADER : [&str; 3] =  ["#h1", "#h2", "#h3"];
 
 fn parse_error(message: &str, parser_cursor: &ParserCursor){
     println!("\t\t{}: {}\n\tUser file row:{}  col:{}  pos:{}\n", ansi_term::Colour::Red.paint("Error"), message, parser_cursor.row, parser_cursor.col, parser_cursor.pos);
@@ -281,7 +287,8 @@ fn image_func(parser_cursor: &mut ParserCursor)->SlideData{
     let slide_data = ValueType::Err; 
     let data = SlideData{config: Some(config),
                          kwd: ConfigKwds::image,
-                         data: slide_data};
+                         data: slide_data,
+                         text_row: parser_cursor.row};
     data
 }
 
@@ -297,21 +304,13 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
                                  ],
                                  "#font");
     parser_cursor.next();
-/* //Not sure what this was good for
-   //TODO: Clean up maybe
-    for i in 0..config.config_data.len(){
-        if config.config_data[i].kwd == ConfigKwds::text_position{
-            config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(0.0)});
-            break;
-        }
-    }
-*/
     let mut return_data = Vec::new();
     if parser_cursor.current() != Some('{'){
         config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(0.0)});
         let mut data = SlideData{  config: Some(config),
                                    kwd: ConfigKwds::text,
-                                   data: ValueType::Err}; 
+                                   data: ValueType::Err,
+                                   text_row: parser_cursor.row}; 
         let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
         data.data = slide_data; 
         return_data.push(data);
@@ -326,7 +325,8 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
                 _config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(nth as f64)});
                 let mut data = SlideData{  config: Some(_config),
                                            kwd: ConfigKwds::text,
-                                           data: ValueType::Err}; 
+                                           data: ValueType::Err,
+                                           text_row: parser_cursor.row}; 
                 let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
                 data.data = slide_data; 
                 return_data.push(data);
@@ -338,6 +338,30 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
         return_data.reverse();
     }
     return_data
+}
+
+// TODO: Finish me
+fn header_func(parser_cursor: &mut ParserCursor)->SlideData{
+    let header_arr = [("#header1", ConfigKwds::header1) , ("#header2", ConfigKwds::header2), ("#header3", ConfigKwds::header3)];
+    let mut configkwd = ConfigKwds::default;
+    for header in header_arr.iter(){
+        if is_keyword(parser_cursor, header.0, false) {
+            configkwd = header.1; 
+            break;
+        }
+    }
+   
+
+
+    let data = gather_value(parser_cursor, LexType::SlideStr, None);
+
+    SlideData{
+        config: None,
+        kwd: configkwd,
+        data: data, 
+        text_row: parser_cursor.row,
+    }
+
 }
 
 fn tex_func(parser_cursor: &mut ParserCursor)->SlideData{
@@ -360,7 +384,8 @@ fn tex_func(parser_cursor: &mut ParserCursor)->SlideData{
 
     let mut slide_data = SlideData{  config: Some(config),
                                kwd: ConfigKwds::latex,
-                               data: ValueType::Err}; 
+                               data: ValueType::Err,
+                               text_row: parser_cursor.row}; 
     if parser_cursor.current() != Some('{'){
         let data = gather_value(parser_cursor, LexType::SlideStr, None);
         slide_data.data = data; 
@@ -383,22 +408,77 @@ fn tex_func(parser_cursor: &mut ParserCursor)->SlideData{
         }
         slide_data.data = ValueType::Str(data_string); 
     }
-    //println!("\n\n\ntexFunc slide data!!! {:?} \n\n\n\n", slide_data);
     slide_data
 }
-//Work in progress
+//TODO: Work in progress
+//The div could use a frame work like nth_font 
 fn div_func(parser_cursor: &mut ParserCursor)->SlideData{
     println!("Div function");
     
-    let config = gen_config_func(parser_cursor, 
-                                 &[("font", ConfigKwds::font, LexType::Str)],
-                                 "#div");
+    let mut config = None;
+    if is_keyword(parser_cursor, "#div(", true) {
+        config = Some(gen_config_func(parser_cursor, 
+                                     &[("size",     ConfigKwds::font_size, LexType::Num),
+                                     ("position", ConfigKwds::div_position, LexType::Arr),
+                                     ("background_color",    ConfigKwds::div_background_color, LexType::Arr),
+                                     ("height",   ConfigKwds::div_height, LexType::Num),
+                                     ("width",   ConfigKwds::div_width, LexType::Num),
+                                     ],
+                                     "#div"));
+        parser_cursor.next();
+    }
+    else {
+        is_keyword(parser_cursor, "#div", false);
+    }
+    SlideData{
+        config: config,
+        kwd: ConfigKwds::default,
+        data: ValueType::Err,
+        text_row: parser_cursor.row,
+    }
+
+/*
+
+    //from font_func
     parser_cursor.next();
-    let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
-    let data = SlideData{config: Some(config),
-                         kwd: ConfigKwds::text,
-                         data: slide_data};
-    data
+    let mut return_data = Vec::new();
+    if parser_cursor.current() != Some('{'){
+        config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(0.0)});
+        let mut data = SlideData{  config: Some(config),
+                                   kwd: ConfigKwds::text,
+                                   data: ValueType::Err,
+                                   text_row: parser_cursor.row}; 
+        let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
+        data.data = slide_data; 
+        return_data.push(data);
+    }
+    else{
+        parser_cursor.next();
+        let mut nth = 0;
+        loop{
+            if parser_cursor.current() == Some('}'){break;}
+            else{
+                let mut _config = config.clone();
+                _config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(nth as f64)});
+                let mut data = SlideData{  config: Some(_config),
+                                           kwd: ConfigKwds::text,
+                                           data: ValueType::Err,
+                                           text_row: parser_cursor.row}; 
+                let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
+                data.data = slide_data; 
+                return_data.push(data);
+
+                parser_cursor.next();
+                nth += 1;
+            }
+        }
+        return_data.reverse();
+    }
+
+
+
+
+*/
 }
 
 fn slide_config(parser_cursor: &mut ParserCursor)->ConfigCard{
@@ -429,6 +509,9 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
             }
         }
         if init == true{
+            
+        //Maybe this should be moved out so that div can use the same code
+
             if is_keyword(parser_cursor, "#font(", true) {
                 let mut font_data = font_func(parser_cursor);
                 loop{
@@ -443,9 +526,22 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
                     is_keyword(parser_cursor, "#tex", true) {
                 card.slide_data.push(tex_func(parser_cursor));
             }
-            else {
-                card.slide_data.push( SlideData{ config: None, kwd: ConfigKwds::text, data: gather_value(parser_cursor, LexType::SlideStr, None) }); 
+            else if is_keyword(parser_cursor, "#head", true) {
+                card.slide_data.push(header_func(parser_cursor));
             }
+            else if is_keyword(parser_cursor, "#div(", true) || 
+                    is_keyword(parser_cursor, "#div", true) {
+                card.slide_data.push(div_func(parser_cursor));
+            }
+            else {
+                card.slide_data.push( SlideData{ config: None,
+                                                 kwd: ConfigKwds::text,
+                                                 data: gather_value(parser_cursor, LexType::SlideStr, None),
+                                                 text_row: parser_cursor.row}); 
+            }
+
+        /////////////////////////
+
         }
         if parser_cursor.next() == None { break; }
     }
@@ -710,6 +806,8 @@ extern= \"/path\"
 
 
 #slide
+#header1 We can do headers #font(color=[200, 20, 10]) too!
+
 We can write a slide like this. 
 No need for a bracketted structure.
 
@@ -718,14 +816,18 @@ We can create a new line with #newline
 
 
 #slide(background_color= [150,0,150])
-  We can also change slide configurations for specific slides
-
-
-#slide
+  We can also change slide configurations for specific slides.
 #font(size=42) We can do different sized text #font(color=[200,50,50]) Diff font color
 
 #font(family=\"Times\", size=32, style=\"bold\", position=[0.2, 0.2]) We can place text.
 
+//#slide
+//#image(path=\"some_that_doesnt_exist.img\", position=[0.6,0.6])
+//
+//#font(margin=0.5){
+//Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+//}
+//
 "
 );
 

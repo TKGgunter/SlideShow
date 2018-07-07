@@ -3,8 +3,10 @@ name = "SlideShow"
 version = "0.1.0"
 authors = ["TKGgunter <thothgunter@live.com>"]
 
+
+
 [dependencies]
 #printpdf = "=0.2.0"
-freetype-rs = "0.16.0"
+#freetype-rs = "0.16.0"
 ansi_term = "=0.11"
 image = "0.18.0"
