@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["TKGgunter <thothgunter@live.com>"]
 
 
+[dependencies.libharu-sys]
+path = "/home/tgunter/Rust/Binding/libharu-sys/"
 
 [dependencies]
 #printpdf = "=0.2.0"

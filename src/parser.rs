@@ -135,6 +135,8 @@ pub struct SlideData{
     pub kwd: ConfigKwds,
     pub data: ValueType,
     pub text_row: usize,
+    //pub div_ids: [u8;2],
+
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -412,7 +414,7 @@ fn tex_func(parser_cursor: &mut ParserCursor)->SlideData{
 }
 //TODO: Work in progress
 //The div could use a frame work like nth_font 
-fn div_func(parser_cursor: &mut ParserCursor)->SlideData{
+fn div_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
     println!("Div function");
     
     let mut config = None;
@@ -430,13 +432,13 @@ fn div_func(parser_cursor: &mut ParserCursor)->SlideData{
     else {
         is_keyword(parser_cursor, "#div", false);
     }
-    SlideData{
+    vec![SlideData{
         config: config,
         kwd: ConfigKwds::default,
         data: ValueType::Err,
         text_row: parser_cursor.row,
-    }
-
+    }]
+    //we loop through and get new slidedata from other functions and set the div_ids
 /*
 
     //from font_func
@@ -531,7 +533,11 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
             }
             else if is_keyword(parser_cursor, "#div(", true) || 
                     is_keyword(parser_cursor, "#div", true) {
-                card.slide_data.push(div_func(parser_cursor));
+                let mut div_data = div_func(parser_cursor);
+                loop{
+                    if div_data.len() <= 0 {break;}
+                    card.slide_data.push(div_data.pop().unwrap());
+                }
             }
             else {
                 card.slide_data.push( SlideData{ config: None,
@@ -548,7 +554,43 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
     Card::SlideCard(card)
 }
 
+//TODO: This is here just to help me think about div_func
+fn return_slide_data(parser_cursor: &mut ParserCursor )->Vec<SlideData>{
 
+    let mut slide_data_vec = Vec::new();
+    if is_keyword(parser_cursor, "#font(", true) {
+        let mut font_data = font_func(parser_cursor);
+        loop{
+            if font_data.len() <= 0 {break;}
+            slide_data_vec.push(font_data.pop().unwrap());
+        }
+    }
+    else if is_keyword(parser_cursor, "#image(", true) {
+        slide_data_vec.push(image_func(parser_cursor));
+    }
+    else if is_keyword(parser_cursor, "#tex(", true) || 
+            is_keyword(parser_cursor, "#tex", true) {
+        slide_data_vec.push(tex_func(parser_cursor));
+    }
+    else if is_keyword(parser_cursor, "#head", true) {
+        slide_data_vec.push(header_func(parser_cursor));
+    }
+    else if is_keyword(parser_cursor, "#div(", true) || 
+            is_keyword(parser_cursor, "#div", true) {
+        let mut div_data = div_func(parser_cursor);
+        loop{
+            if div_data.len() <= 0 {break;}
+            slide_data_vec.push(div_data.pop().unwrap());
+        }
+    }
+    else {
+        slide_data_vec.push( SlideData{ config: None,
+                                         kwd: ConfigKwds::text,
+                                         data: gather_value(parser_cursor, LexType::SlideStr, None),
+                                         text_row: parser_cursor.row}); 
+    }
+    slide_data_vec
+}
 
 fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_type: Option<LexType>)->ValueType{
     match expected_type{

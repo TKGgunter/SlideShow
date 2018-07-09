@@ -3,3 +3,5 @@
 /target/
 **/*.pdf
 **/*.rs.bk
+Cargo.toml
+Cargo.lock
