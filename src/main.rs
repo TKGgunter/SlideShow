@@ -1,3 +1,8 @@
+use std::time::Instant;
+use std::time::Duration;
+use std::fs::File;
+use std::path::Path;
+use std::io::prelude::*;
 
 
 
@@ -6,9 +11,7 @@ use parser::*; //{Card, ConfigCard, SlideCard, ConfigKwds, ValueType};
 
 
 
-fn main(){
-    println!("OK");
-
+fn print_cards(file_contents: Option<String>){
     let cards = construct_document(None);
     for card in cards.iter(){
         match card{
@@ -17,5 +20,53 @@ fn main(){
             _=>{}
         }
     }
+    
+}
+
+
+fn main(){
+
+
+    let file_path = Path::new("./temp.txt");
+
+    if file_path.exists() {
+        let mut last_modified = std::fs::metadata(file_path).unwrap().modified().unwrap();
+        let mut init = false; 
+        //I don't use this but it might be helpful later!
+        //let mut elapsed_time = Instant::now();
+
+
+        loop {
+            //I don't use this but it might be helpful later!
+            //let mut current_time =  elapsed_time.elapsed().as_secs() as f64 * 1000.0 + elapsed_time.elapsed().subsec_nanos() as f64 / 10.0f64.powf(6.0);
+
+            if let Ok(Ok(modified)) = std::fs::metadata(&file_path).map(|m| m.modified())
+            {
+                if modified > last_modified || !init 
+                {
+                    println!("text file was modified... updating");
+                    let mut file_contents = String::new();
+                    {
+                        let mut file = File::open(file_path).unwrap();
+                        file.read_to_string(&mut file_contents).unwrap();
+                    }
+
+                    print_cards(Some(file_contents));
+
+                    println!("update complete");
+                    init = true;
+                }
+            }
+            ::std::thread::sleep(Duration::new(0, 16 * 1_000_000 ));
+        }
+    
+    }
+    else{
+        print_cards(None);
+    
+    }
+
+
+
 }
 
