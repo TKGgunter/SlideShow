@@ -2,14 +2,6 @@
 //
 //TODO:
 //something about divs
-//
-
-//div
-//working with newlines
-//headers, bullets, newline 
-//\n and \t s.
-//image path 
-//latex strings
 
 
 #![allow(dead_code)]
@@ -141,12 +133,13 @@ pub struct SlideData{
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ValueType{
-    Num(f64),
+    Num(f64), //TODO: Move to f32
     Str(String),
     Arr(Vec<ValueType>),
     Err,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ConfigKwds{
     slide_width,
@@ -879,7 +872,7 @@ We can create a new line with #newline
 
     let mut parser_cursor = ParserCursor::new(slide_string);
 
-    println!("FILE:\n\n{:?}\n\nBEGINNING CARD GENERATION", parser_cursor.file_string);
+    println!("\n\nBEGINNING CARD GENERATION\n\n");
 
     let mut chars = Vec::<char>::new();
     let mut document_structure = Vec::<Card>::new();
@@ -904,7 +897,7 @@ We can create a new line with #newline
 
 
 
-//TODO: These functions are heavy on memory usage :(
+//TODO: This function maybe heavy on memory usage
 fn remove_comments(contents: String)->String{
     let mut clean_contents = String::new();
     for line in contents.split('\n'){

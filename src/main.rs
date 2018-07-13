@@ -4,7 +4,8 @@ use std::fs::File;
 use std::path::Path;
 use std::io::prelude::*;
 
-
+mod render_libharu;
+use render_libharu::{render};
 
 mod parser;
 use parser::*; //{Card, ConfigCard, SlideCard, ConfigKwds, ValueType};
@@ -12,7 +13,7 @@ use parser::*; //{Card, ConfigCard, SlideCard, ConfigKwds, ValueType};
 
 
 fn print_cards(file_contents: Option<String>){
-    let cards = construct_document(None);
+    let cards = construct_document(file_contents);
     for card in cards.iter(){
         match card{
             Card::SlideCard(slide)=> slide.print(),
@@ -51,10 +52,13 @@ fn main(){
                         file.read_to_string(&mut file_contents).unwrap();
                     }
 
+                    println!("{}", file_contents);
                     print_cards(Some(file_contents));
 
                     println!("update complete");
                     init = true;
+                    last_modified = modified;
+
                 }
             }
             ::std::thread::sleep(Duration::new(0, 16 * 1_000_000 ));
