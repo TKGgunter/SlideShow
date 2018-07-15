@@ -131,6 +131,7 @@ pub enum VAlignment{
     Center,
     Bottom
 }
+#[derive(Debug, Copy, Clone)]
 pub struct DocumentSettings<'a>{
     slide_align: Alignment,
     slide_valign: VAlignment,
@@ -187,90 +188,119 @@ pub fn match_value_strdata(data: &str, valuetype: &ValueType)->String{
 }
 
 
+pub fn get_slide_settings( document_settings : &mut DocumentSettings, config : &ConfigCard ){
+    for iter in config.config_data.iter(){
+        match iter.kwd{
+            ConfigKwds::slide_width => { 
+                document_settings.slide_width = match_value_f32data(&document_settings.slide_width, &iter.data);
+            },
+            ConfigKwds::slide_height => { 
+                document_settings.slide_height = match_value_f32data(&document_settings.slide_height, &iter.data);
+            },
+            ConfigKwds::slide_background_color => { 
+                match_value_arrf32data(&mut document_settings.slide_color, &iter.data);
+                for i in 0..document_settings.slide_color.len(){
+                    if document_settings.slide_color[i] > 1.0{
+                        document_settings.slide_color[i] = document_settings.slide_color[i] / 255.0
+                    }
+                }
+            },
+            ConfigKwds::font_color => { 
+                match_value_arrf32data(&mut document_settings.slide_font_color, &iter.data);
+                for i in 0..document_settings.slide_font_color.len(){
+                    if document_settings.slide_font_color[i] > 1.0{
+                        document_settings.slide_font_color[i] = document_settings.slide_font_color[i] / 255.0
+                    }
+                }
+            },
+            ConfigKwds::align => { 
+                let temp_align = match_value_strdata("", &iter.data).to_lowercase();
+                if temp_align == "left"{
+                    document_settings.slide_align = Alignment::Left;
+                }
+                else if temp_align == "right"{
+                    document_settings.slide_align = Alignment::Right;
+                }
+                else if temp_align == "center"{
+                    document_settings.slide_align = Alignment::Center;
+                }
+                else {
+                    print!("Error: Unknown alignment {}", temp_align);
+                }
+            },
+            ConfigKwds::valign => { 
+                let temp_align = match_value_strdata("", &iter.data).to_lowercase();
+                if temp_align == "top"{
+                    document_settings.slide_valign = VAlignment::Top;
+                }
+                else if temp_align == "bottom"{
+                    document_settings.slide_valign = VAlignment::Bottom;
+                }
+                else if temp_align == "center"{
+                    document_settings.slide_valign = VAlignment::Center;
+                }
+                else {
+                    print!("Error: Unknown vertical alignment {}", temp_align);
+                }
+            },
+            //ConfigKwds::font => { 
+            //    font = pdf.load_ttf_from_file("temp_shit" );
+            //},
+            ConfigKwds::font_size => { 
+                document_settings.slide_font_size = match_value_f32data(&0.0, &iter.data);
+            },
+            _ => { println!("We ain't delt with that yet."); }
+        }
+    }
+
+}
+
+
+
+
 //TODO: What is this lifetime doing?
 pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &SlideCard, pdf: &mut HpdfDoc ){
     let mut page = pdf.add_page();
     //Slide settings
-    
-    let mut font = document_settings.slide_font;
-    let mut font_size = document_settings.slide_font_size;
-    let mut font_color = document_settings.slide_font_color;
-    let mut slide_width = document_settings.slide_width;
-    let mut slide_height = document_settings.slide_height;
-    let mut slide_color = document_settings.slide_color;
-    let mut text_align = document_settings.slide_align;
-    let mut text_valign = document_settings.slide_valign;
-    let mut cursor = [0.0, 0.0];
+   
+    let mut cloned_document_settings = document_settings.clone();
+
 
 
 
     match slide_card.config{
         Some(ref config_card) => {
-            for (i, iter) in config_card.config_data.iter().enumerate(){
-                match iter.kwd{
-                    ConfigKwds::slide_width => { 
-                        slide_width = match_value_f32data(&document_settings.slide_width, &iter.data);
-                    },
-                    ConfigKwds::slide_height => { 
-                        slide_height = match_value_f32data(&document_settings.slide_height, &iter.data);
-                    },
-                    ConfigKwds::align => { 
-                        let temp_align = match_value_strdata("", &iter.data).to_lowercase();
-                        if temp_align == "left"{
-                            text_align = Alignment::Left;
-                        }
-                        else if temp_align == "right"{
-                            text_align = Alignment::Right;
-                        }
-                        else if temp_align == "center"{
-                            text_align = Alignment::Center;
-                        }
-                        else {
-                            print!("Error: Unknown alignment {}", temp_align);
-                        }
-                    },
-                    ConfigKwds::valign => { 
-                        let temp_align = match_value_strdata("", &iter.data).to_lowercase();
-                        if temp_align == "top"{
-                            text_valign = VAlignment::Top;
-                        }
-                        else if temp_align == "bottom"{
-                            text_valign = VAlignment::Bottom;
-                        }
-                        else if temp_align == "center"{
-                            text_valign = VAlignment::Center;
-                        }
-                        else {
-                            print!("Error: Unknown vertical alignment {}", temp_align);
-                        }
-                    },
-                    ConfigKwds::slide_background_color => { 
-                        match_value_arrf32data(&mut slide_color, &iter.data);
-                        for i in 0..slide_color.len(){
-                            if slide_color[i] > 1.0{
-                                slide_color[i] = slide_color[i] / 255.0
-                            }
-                        }
-                    },
-                    _ => { println!("We ain't delt with that yet."); }
-                }
-            }
+            get_slide_settings( &mut cloned_document_settings, config_card );
         },
         _=>{}
     }
 
+    let mut font        = cloned_document_settings.slide_font;
+    let mut font_size   = cloned_document_settings.slide_font_size;
+    let mut font_color  = cloned_document_settings.slide_font_color;
+    let mut slide_width = cloned_document_settings.slide_width;
+    let mut slide_height= cloned_document_settings.slide_height;
+    let mut slide_color = cloned_document_settings.slide_color;
+    let mut text_align  = cloned_document_settings.slide_align;
+    let mut text_valign = cloned_document_settings.slide_valign;
+    let mut cursor = [0.0, 0.0];
     
+
+    if font_size <= 1.0{
+        font_size *= slide_height;
+    }
+
     page.set_page_dimensions( &slide_width, &slide_height);
     page.set_page_color(slide_color);
     cursor[0] = document_settings.slide_text_pos[0] * slide_width;
     let mut cursor_fixed = false; 
 
     //Vertical Alignment code
-    //Should think about moveing out at some point
+    //Should think about moved out at some point
     {
         if text_valign != VAlignment::Top{
             let mut delta_row = 1;
-            for (i, iter) in slide_card.slide_data.iter().enumerate(){
+            for  iter in slide_card.slide_data.iter(){
                 match iter.kwd{
                     ConfigKwds::text=>{
                         let temp_string = match_value_strdata("", &iter.data);
@@ -300,8 +330,13 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
         }
     }
     //
+    
 
     let mut temp_cursor = None;
+    let mut temp_font_size = None;
+    let mut temp_font_color = None;
+    //let mut temp_align = None;
+    //let mut temp_font = None;
     let mut temp_default_cursor_x = 0.0;
     for iter in slide_card.slide_data.iter(){
         match iter.config{
@@ -320,7 +355,22 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                             temp_cursor = Some(_cursor);
                         },
                         ConfigKwds::font_size=>{
-                            println!("font size {:?}", iter_config.data);
+                            let mut _font_size = match_value_f32data(&font_size, &iter_config.data);
+                            if _font_size <= 1.0{
+                                _font_size *= slide_height;
+                            }
+
+                            temp_font_size = Some(_font_size);
+                        },
+                        ConfigKwds::font_color=>{
+                            let mut _font_color = font_color.clone();
+                            match_value_arrf32data(&mut _font_color, &iter_config.data);
+                            for i in 0.._font_color.len(){
+                                if _font_color[i] > 1.0{
+                                    _font_color[i] = _font_color[i] / 255.0;
+                                }
+                            }
+                            temp_font_color = Some(_font_color);
                         },
                         _=>{
                             println!("What ever you want we don't do!");
@@ -339,11 +389,20 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                 let temp_string = match_value_strdata("", &iter.data);
                 if temp_string == "".to_string(){
                     temp_cursor = None;
+                    temp_font_size = None;
+                    temp_font_color = None;
                 }
                 else{
                     unsafe{
                         //TODO: This is temparary we only want fonts from ttf files
                         let font = HpdfFont(HPDF_GetFont (pdf.0, CString::new("Helvetica").unwrap().as_ptr(), ptr::null_mut()));
+
+                        //TODO:
+                        //I don't like the way this looks be we have to handle temporary changes in
+                        //font size.
+                        let mut _font_size = font_size.clone();
+                        if temp_font_size != None{ _font_size = temp_font_size.unwrap() }
+
 
 
 
@@ -351,13 +410,13 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         if text_align == Alignment::Center{
                             delta = 0.5; 
                             unsafe{
-                                HPDF_Page_SetFontAndSize (page.0, font.0, font_size*1.0);
+                                HPDF_Page_SetFontAndSize (page.0, font.0, _font_size*1.0);
                                 delta *= HPDF_Page_TextWidth( page.0,  cstring!(temp_string.as_str()).as_ptr() );
                             }
                         }
                         else if text_align == Alignment::Right{
                             unsafe{
-                                HPDF_Page_SetFontAndSize (page.0, font.0, font_size*1.0);
+                                HPDF_Page_SetFontAndSize (page.0, font.0, _font_size*1.0);
                                 delta = HPDF_Page_TextWidth( page.0,  cstring!(temp_string.as_str()).as_ptr() );
                             }
                         }
@@ -369,16 +428,34 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         cursor[0] = document_settings.slide_text_pos[0] * slide_width;
                         cursor[0] = cursor[0] - delta;
                         cursor[1] -= font_size; //TODO: Use correct next line thing
+                        if temp_cursor.is_some() {
+                            temp_cursor = Some( [temp_default_cursor_x - delta, temp_cursor.unwrap()[1] - _font_size] ); //TODO: Use correct next line thing
+                        }
+                       
+
 
                         //TODO:
                         //Make all options swappable like this!
-                        if temp_cursor == None{
-                            cursor = page.render_text( &temp_string, &font_size, &font, &font_color, &cursor);
+                        let mut _cursor = cursor.clone();
+                        if temp_cursor != None{ _cursor = temp_cursor.unwrap() }
+
+                        let mut _font_color = font_color.clone();
+                        if temp_font_color != None{ _font_color = temp_font_color.unwrap() }
+
+
+    //let mut temp_align = None;
+    //let mut temp_font = None;
+
+                        _cursor = page.render_text( &temp_string, &_font_size, &font, &_font_color, &_cursor);
+                        if temp_cursor.is_some(){
+                            temp_cursor = Some(_cursor);
                         }
-                        else {
-                            temp_cursor = Some( [temp_default_cursor_x - delta, temp_cursor.unwrap()[1] - font_size]); //TODO: Use correct next line thing
-                            temp_cursor = Some(page.render_text( &temp_string, &font_size, &font, &font_color, &temp_cursor.unwrap()));
+                        else{
+                            cursor = _cursor;
                         }
+
+
+
                     }
                 }
             },
@@ -419,74 +496,7 @@ pub fn render(slides: &Vec<Card>){
                 make_slide(&document_settings, slide, &mut pdf);
             },
             Card::ConfigCard(config)=>{
-                //TODO: This set of commands and the set of commands for a given slide should maybe
-                //be the same. Should sleep on it.
-                for (i, iter) in config.config_data.iter().enumerate(){
-                    match iter.kwd{
-                        ConfigKwds::slide_width => { 
-                            document_settings.slide_width = match_value_f32data(&document_settings.slide_width, &iter.data);
-                        },
-                        ConfigKwds::slide_height => { 
-                            document_settings.slide_height = match_value_f32data(&document_settings.slide_height, &iter.data);
-                        },
-                        ConfigKwds::slide_background_color => { 
-                            match_value_arrf32data(&mut document_settings.slide_color, &iter.data);
-                            for i in 0..document_settings.slide_color.len(){
-                                if document_settings.slide_color[i] > 1.0{
-                                    document_settings.slide_color[i] = document_settings.slide_color[i] / 255.0
-                                }
-                            }
-                        },
-                        ConfigKwds::font_color => { 
-                            match_value_arrf32data(&mut document_settings.slide_font_color, &iter.data);
-                            for i in 0..document_settings.slide_font_color.len(){
-                                if document_settings.slide_font_color[i] > 1.0{
-                                    document_settings.slide_font_color[i] = document_settings.slide_font_color[i] / 255.0
-                                }
-                            }
-                        },
-                        ConfigKwds::slide_width => { 
-                            document_settings.slide_width = match_value_f32data(&document_settings.slide_width, &iter.data);
-                        },
-                        ConfigKwds::slide_height => { 
-                            document_settings.slide_height = match_value_f32data(&document_settings.slide_height, &iter.data);
-                        },
-                        ConfigKwds::align => { 
-                            let temp_align = match_value_strdata("", &iter.data).to_lowercase();
-                            if temp_align == "left"{
-                                document_settings.slide_align = Alignment::Left;
-                            }
-                            else if temp_align == "right"{
-                                document_settings.slide_align = Alignment::Right;
-                            }
-                            else if temp_align == "center"{
-                                document_settings.slide_align = Alignment::Center;
-                            }
-                            else {
-                                print!("Error: Unknown alignment {}", temp_align);
-                            }
-                        },
-                        ConfigKwds::valign => { 
-                            let temp_align = match_value_strdata("", &iter.data).to_lowercase();
-                            if temp_align == "top"{
-                                document_settings.slide_valign = VAlignment::Top;
-                            }
-                            else if temp_align == "bottom"{
-                                document_settings.slide_valign = VAlignment::Bottom;
-                            }
-                            else if temp_align == "center"{
-                                document_settings.slide_valign = VAlignment::Center;
-                            }
-                            else {
-                                print!("Error: Unknown vertical alignment {}", temp_align);
-                            }
-                        },
-                        //ConfigKwds::font => { 
-                        //    font = pdf.load_ttf_from_file("temp_shit" );
-                        //},
-                        _ => { println!("We ain't delt with that yet."); }
-                    }
-                }
+                get_slide_settings( &mut document_settings, config );
             },
             _=>{ println!("Some error"); }
         }

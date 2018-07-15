@@ -1,6 +1,7 @@
 //Thoth Gunter
 //
 //TODO:
+//Parser bug font { <= infinite loop when trying to peek
 //something about divs
 
 
@@ -728,7 +729,8 @@ fn config_func(parser_cursor: &mut ParserCursor)->Card{
                        ("align", ConfigKwds::align, Str),
                        ("valign", ConfigKwds::valign, Str),
                        ("font", ConfigKwds::font, Str),
-                       ("font_color", ConfigKwds::font_color, Arr)],
+                       ("font_color", ConfigKwds::font_color, Arr),
+                       ("font_size", ConfigKwds::font_size, Num)],
                      "#config");
     Card::ConfigCard(card)
 }
@@ -843,6 +845,7 @@ height = 190.5,
 background_color = [100,0,100], //array style
 font = [\"Times\", \"ASDF/aSDFA/FASDFA\"],
 font_color = [200, 200, 200],
+font_size = 32.0,
 align = \"center\"
 extern= \"/path\"
 )
