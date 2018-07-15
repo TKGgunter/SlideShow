@@ -12,8 +12,7 @@ use parser::*; //{Card, ConfigCard, SlideCard, ConfigKwds, ValueType};
 
 
 
-fn print_cards(file_contents: Option<String>){
-    let cards = construct_document(file_contents);
+fn print_cards(cards: &Vec<Card>){
     for card in cards.iter(){
         match card{
             Card::SlideCard(slide)=> slide.print(),
@@ -52,8 +51,14 @@ fn main(){
                         file.read_to_string(&mut file_contents).unwrap();
                     }
 
+
                     println!("{}", file_contents);
-                    print_cards(Some(file_contents));
+
+                    let cards = construct_document(Some(file_contents));
+                    print_cards(&cards);
+
+                    render_libharu::render(&cards);
+
 
                     println!("update complete");
                     init = true;
@@ -66,7 +71,8 @@ fn main(){
     
     }
     else{
-        print_cards(None);
+        let cards = construct_document(None);
+        print_cards(&cards);
     
     }
 

@@ -1,0 +1,59 @@
+//Thoth Gunter
+#config(
+background_color= [0.0, 1.0, 0.0],
+font_color= [250, 250, 250],
+)
+
+#slide(align="left")
+//#font(style="bold", size=42, position=[0.2, 0.5])Hey I made my own slide program thingy!
+
+The default color is green.
+
+The next will be white.
+
+
+#slide(background_color= [1.0, 1.0, 1.0], align="right")
+You can find the code here(The next is white):
+
+github.com/TKGgunter/SlideShow
+
+//#font(position=[0.3, 0.5], style="bold_italic", size=42) Pre-alpha boys
+
+
+
+#slide
+And the last goes back to green!
+
+Lets right alot of text just to
+
+See if things valigns correctly
+
+And yatta
+
+ASDF
+
+asfdasdfa
+
+adsfasdf
+
+afdasdf
+
+
+#slide(valign="bottom")
+ASDF
+
+asfdasdfa
+
+adsfasdf
+
+afdasdf
+
+#slide(valign="top")
+ASDF
+
+asfdasdfa
+
+adsfasdf
+
+afdasdf
+

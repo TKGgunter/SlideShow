@@ -1,13 +1,13 @@
 //Thoth Gunter
 #config(
-background_color= [0,0,0],
-font_color= [250, 250, 250],
+background_color= [0.2, 0.2, 0.2],
+font_color= [150, 150, 50],
 )
 
 #slide
-#font(style="bold", size=42, position=[0.2, 0.5])Hey I made my own slide program thingy!
+Hey I made a slide show pdf creation tool.
 
-I can render text to a slide with different fonts.
+This is a test of the settings.
 
 
 #slide
@@ -15,4 +15,11 @@ You can find the code here:
 
 github.com/TKGgunter/SlideShow
 
-#font(position=[0.3, 0.5], style="bold_italic", size=42) Pre-alpha boys
+
+#slide
+#font(position=[0.4, 0.9], size=24) Pre-alpha boys #newline
+What happens when I do this? #newline
+ASDF
+
+
+Some other text. 

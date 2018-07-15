@@ -145,7 +145,9 @@ pub enum ConfigKwds{
     slide_width,
     slide_height,
     slide_background_color,
+
     align,
+    valign,
 
     header1,
     header2,
@@ -154,6 +156,7 @@ pub enum ConfigKwds{
     text,
     text_position,
     text_align,
+    text_margin,
 
     div,
     div_background_color,
@@ -168,7 +171,6 @@ pub enum ConfigKwds{
     font_current,
     font_style,
     font_nth,
-    font_margin,
 
     latex,
     latex_color,
@@ -294,7 +296,7 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
                                  ("position", ConfigKwds::text_position, LexType::Arr),
                                  ("color", ConfigKwds::font_color, LexType::Arr),
                                  ("style", ConfigKwds::font_style, LexType::Str),
-                                 ("margin", ConfigKwds::font_margin, LexType::Num),
+                                 ("margin", ConfigKwds::text_margin, LexType::Num),
                                  ("align", ConfigKwds::text_align, LexType::Str),
                                  ],
                                  "#font");
@@ -477,7 +479,12 @@ fn div_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
 }
 
 fn slide_config(parser_cursor: &mut ParserCursor)->ConfigCard{
-    gen_config_func(parser_cursor, &[("background_color", ConfigKwds::slide_background_color, LexType::Arr)], "#slide")
+    gen_config_func(parser_cursor, &[("background_color", ConfigKwds::slide_background_color, LexType::Arr),
+                                     ("width", ConfigKwds::slide_width, LexType::Num),
+                                     ("height", ConfigKwds::slide_height, LexType::Num),
+                                     ("align", ConfigKwds::align, LexType::Str),
+                                     ("valign", ConfigKwds::valign, LexType::Str),
+                                    ], "#slide")
 }
 fn slide_func(parser_cursor: &mut ParserCursor)->Card{
     let mut card = SlideCard{config:None, slide_data:Vec::new()};
@@ -719,6 +726,7 @@ fn config_func(parser_cursor: &mut ParserCursor)->Card{
                        ("height", ConfigKwds::slide_height, Num),
                        ("background_color", ConfigKwds::slide_background_color, Arr),
                        ("align", ConfigKwds::align, Str),
+                       ("valign", ConfigKwds::valign, Str),
                        ("font", ConfigKwds::font, Str),
                        ("font_color", ConfigKwds::font_color, Arr)],
                      "#config");
@@ -868,6 +876,7 @@ We can create a new line with #newline
 
     if let Some(s) = input_string{ slide_string = s; } else{ slide_string = example_string}
     slide_string = remove_comments(slide_string);
+    slide_string = replace_newline(slide_string);
     slide_string = replace_bullet(slide_string);
 
     let mut parser_cursor = ParserCursor::new(slide_string);
@@ -924,6 +933,11 @@ fn remove_comments(contents: String)->String{
 }
 
 
+fn replace_newline(contents: String)->String{
+    let mut clean_contents = String::new();
+    clean_contents = contents.replace("#newline", "\n");
+    clean_contents
+}
 
 fn replace_bullet(contents: String)->String{
     let mut clean_contents = String::new();
