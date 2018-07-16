@@ -12,6 +12,4 @@ sudo apt-get install dvipng
 
 
 TODO:
-+complete div
-+auto reload
-+render basic slides with libharu
++Decoupe cursor position corrdinates in parser

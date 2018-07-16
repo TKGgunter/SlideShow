@@ -1,6 +1,8 @@
 //Thoth Gunter
 //
-//TODO: Handle error codes!
+//TODO: 
+//+Handle error codes!
+//+Make right and center align work when using a font style change
 
 #![allow(dead_code)]
 
@@ -249,6 +251,9 @@ pub fn get_slide_settings( document_settings : &mut DocumentSettings, config : &
             ConfigKwds::font_size => { 
                 document_settings.slide_font_size = match_value_f32data(&0.0, &iter.data);
             },
+            ConfigKwds::text_position=>{
+                match_value_arrf32data(&mut document_settings.slide_text_pos, &iter.data);
+            },
             _ => { println!("We ain't delt with that yet."); }
         }
     }
@@ -292,7 +297,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
     page.set_page_dimensions( &slide_width, &slide_height);
     page.set_page_color(slide_color);
-    cursor[0] = document_settings.slide_text_pos[0] * slide_width;
+    cursor[0] = cloned_document_settings.slide_text_pos[0] * slide_width;
     let mut cursor_fixed = false; 
 
     //Vertical Alignment code
@@ -319,14 +324,14 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                 //This is all down to do vertical center
                 //Currently assuming all rows have the same font and font size
                 
-                cursor[1] = document_settings.slide_text_pos[1] * slide_height + font_size * delta_row as f32 / 2.0;
+                cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height + font_size * delta_row as f32 / 2.0;
             }
             else if text_valign == VAlignment::Bottom{
-                cursor[1] = document_settings.slide_text_pos[1] * slide_height + font_size * delta_row as f32;
+                cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height + font_size * delta_row as f32;
             }
         }
         else{
-                cursor[1] = document_settings.slide_text_pos[1] * slide_height;
+                cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height;
         }
     }
     //
@@ -335,10 +340,15 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
     let mut temp_cursor = None;
     let mut temp_font_size = None;
     let mut temp_font_color = None;
+    let mut temp_font_braced_line = None;
     //let mut temp_align = None;
     //let mut temp_font = None;
     let mut temp_default_cursor_x = 0.0;
+    let mut text_row = 0;
+    let mut prev_text_row = 0;
     for iter in slide_card.slide_data.iter(){
+        prev_text_row = text_row;
+        text_row = iter.text_row;
         match iter.config{
             Some(ref config_card) => {
                 for iter_config in config_card.config_data.iter(){
@@ -372,6 +382,9 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                             }
                             temp_font_color = Some(_font_color);
                         },
+                        ConfigKwds::font_braced=>{
+                            temp_font_braced_line = Some( match_value_f32data(&0.0, &iter_config.data));
+                        }
                         _=>{
                             println!("What ever you want we don't do!");
                         }
@@ -388,9 +401,6 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
                 let temp_string = match_value_strdata("", &iter.data);
                 if temp_string == "".to_string(){
-                    temp_cursor = None;
-                    temp_font_size = None;
-                    temp_font_color = None;
                 }
                 else{
                     unsafe{
@@ -402,8 +412,6 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         //font size.
                         let mut _font_size = font_size.clone();
                         if temp_font_size != None{ _font_size = temp_font_size.unwrap() }
-
-
 
 
                         let mut delta = 0.0;
@@ -425,11 +433,16 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         //TODO: 
                         //I can't believe this works with font example...
                         //Why does this work
-                        cursor[0] = document_settings.slide_text_pos[0] * slide_width;
-                        cursor[0] = cursor[0] - delta;
-                        cursor[1] -= font_size; //TODO: Use correct next line thing
+                        if (text_row - prev_text_row) > 1 {
+                            cursor[0] = cloned_document_settings.slide_text_pos[0] * slide_width;
+                            cursor[0] = cursor[0] - delta;
+                            
+                        //TODO: Use correct next line thing
+                            cursor[1] -= font_size; 
+                        }
+
                         if temp_cursor.is_some() {
-                            temp_cursor = Some( [temp_default_cursor_x - delta, temp_cursor.unwrap()[1] - _font_size] ); //TODO: Use correct next line thing
+                            temp_cursor = Some( [temp_default_cursor_x - delta, temp_cursor.unwrap()[1] - _font_size * temp_font_braced_line.unwrap()] ); //TODO: Use correct next line thing
                         }
                        
 
@@ -442,7 +455,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         let mut _font_color = font_color.clone();
                         if temp_font_color != None{ _font_color = temp_font_color.unwrap() }
 
-
+    //TODO:
     //let mut temp_align = None;
     //let mut temp_font = None;
 
@@ -454,6 +467,9 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                             cursor = _cursor;
                         }
 
+                temp_cursor = None;
+                temp_font_size = None;
+                temp_font_color = None;
 
 
                     }
@@ -485,7 +501,7 @@ pub fn render(slides: &Vec<Card>){
                                                     slide_width:  800.0,
                                                     slide_font_size: 32.0,
                                                     slide_font_color: [0.0, 0.0, 0.0],
-                                                    slide_text_pos: [0.5, 0.50],
+                                                    slide_text_pos: [0.5, 0.5],
                                                     slide_font: "Times", //Should prob be a handle of some kind.
                                                 };
 

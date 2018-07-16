@@ -2,7 +2,7 @@
 #config(
 background_color= [0.2, 0.2, 0.2],
 font_color= [150, 150, 50],
-font_size = 0.05
+font_size = 0.05,
 )
 
 #slide()
@@ -18,13 +18,15 @@ github.com/TKGgunter/SlideShow
 
 
 #slide
-#font(position=[0.4, 0.9], size=45, color=[0.65, 0.65, 0.65]) Pre-alpha boys #newline
+#font(position=[0.4, 0.9], size=45, color=[0.65, 0.65, 0.65]){ Pre-alpha boys #newline
 What happens when I do this? #newline
 ASDF
+}
 
+Something?
 
-Some other text. 
+#slide(align="left", text_position=[0.05, 0.7], valign="top", font_color =[0.0, 0.99, 0])
+ASDF #font(color=[0.99, 0, 0]){ KILL Yatta } ASDF
 
-#slide
-#font(color=[0.99, 0, 0]){ KILL }
-ASDF
+A measage to 
+peeper

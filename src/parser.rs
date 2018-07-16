@@ -91,6 +91,7 @@ pub enum LexType{
     Str,
     Arr,
     SlideStr,
+    Braced,
 }
 
 
@@ -171,7 +172,7 @@ pub enum ConfigKwds{
     font_size,
     font_current,
     font_style,
-    font_nth,
+    font_braced,
 
     latex,
     latex_color,
@@ -304,7 +305,7 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
     parser_cursor.next();
     let mut return_data = Vec::new();
     if parser_cursor.current() != Some('{'){
-        config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(0.0)});
+        config.config_data.push(ConfigData{ kwd: ConfigKwds::font_braced, data: ValueType::Num(0.0)});
         let mut data = SlideData{  config: Some(config),
                                    kwd: ConfigKwds::text,
                                    data: ValueType::Err,
@@ -317,19 +318,21 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
         parser_cursor.next();
         let mut nth = 0;
         loop{
-            if parser_cursor.current() == Some('}'){break;}
+            if parser_cursor.current() == Some('}') {
+                break;
+            }
             else{
                 let mut _config = config.clone();
-                _config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(nth as f64)});
+                _config.config_data.push(ConfigData{ kwd: ConfigKwds::font_braced, data: ValueType::Num(nth as f64)});
                 let mut data = SlideData{  config: Some(_config),
                                            kwd: ConfigKwds::text,
                                            data: ValueType::Err,
                                            text_row: parser_cursor.row}; 
-                let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
+                let slide_data = gather_value(parser_cursor, LexType::SlideStr, Some(LexType::Braced));
                 data.data = slide_data; 
                 return_data.push(data);
 
-                parser_cursor.next();
+                if parser_cursor.next() == None{break;}
                 nth += 1;
             }
         }
@@ -435,48 +438,6 @@ fn div_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
         text_row: parser_cursor.row,
     }]
     //we loop through and get new slidedata from other functions and set the div_ids
-/*
-
-    //from font_func
-    parser_cursor.next();
-    let mut return_data = Vec::new();
-    if parser_cursor.current() != Some('{'){
-        config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(0.0)});
-        let mut data = SlideData{  config: Some(config),
-                                   kwd: ConfigKwds::text,
-                                   data: ValueType::Err,
-                                   text_row: parser_cursor.row}; 
-        let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
-        data.data = slide_data; 
-        return_data.push(data);
-    }
-    else{
-        parser_cursor.next();
-        let mut nth = 0;
-        loop{
-            if parser_cursor.current() == Some('}'){break;}
-            else{
-                let mut _config = config.clone();
-                _config.config_data.push(ConfigData{ kwd: ConfigKwds::font_nth, data: ValueType::Num(nth as f64)});
-                let mut data = SlideData{  config: Some(_config),
-                                           kwd: ConfigKwds::text,
-                                           data: ValueType::Err,
-                                           text_row: parser_cursor.row}; 
-                let slide_data = gather_value(parser_cursor, LexType::SlideStr, None);
-                data.data = slide_data; 
-                return_data.push(data);
-
-                parser_cursor.next();
-                nth += 1;
-            }
-        }
-        return_data.reverse();
-    }
-
-
-
-
-*/
 }
 
 fn slide_config(parser_cursor: &mut ParserCursor)->ConfigCard{
@@ -485,6 +446,8 @@ fn slide_config(parser_cursor: &mut ParserCursor)->ConfigCard{
                                      ("height", ConfigKwds::slide_height, LexType::Num),
                                      ("align", ConfigKwds::align, LexType::Str),
                                      ("valign", ConfigKwds::valign, LexType::Str),
+                                     ("text_position", ConfigKwds::text_position, LexType::Arr),
+                                     ("font_color", ConfigKwds::font_color, LexType::Arr),
                                     ], "#slide")
 }
 fn slide_func(parser_cursor: &mut ParserCursor)->Card{
@@ -593,7 +556,7 @@ fn return_slide_data(parser_cursor: &mut ParserCursor )->Vec<SlideData>{
     slide_data_vec
 }
 
-fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_type: Option<LexType>)->ValueType{
+fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_type_or_braced: Option<LexType>)->ValueType{
     match expected_type{
         LexType::Num => {
             let mut value = String::from("");
@@ -655,7 +618,7 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_ty
                         if parser_cursor.current().unwrap() == '[' { init = true; } 
                     }
                     else{
-                        if let Some(lex_type) = arr_type{ 
+                        if let Some(lex_type) = arr_type_or_braced{ 
                             let value = gather_value(parser_cursor, lex_type, None);
                             arr.push(value);
                         }
@@ -690,7 +653,16 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_ty
         }
         LexType::SlideStr => { 
             let mut value = String::from("");
+            let mut is_special_braced_str = false;
+            if arr_type_or_braced.is_some(){
+                is_special_braced_str = true;
+            }
+            if parser_cursor.file_string[parser_cursor.prev_pos] == '{'{
+                is_special_braced_str = true;
+            }
             loop{
+                //TODO: 
+                //What's going on here are we just breaking if we get a newline?
                 if parser_cursor.current().unwrap() == '\n'{ 
                     if let Some(p) = parser_cursor.peek(){ 
                         if p == '\n'{ break; }
@@ -702,6 +674,10 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_ty
                     continue; 
                 }
 
+                // This is used to make sure we get out of Curlly braced #font(){STRINGS}
+                if is_special_braced_str == true{
+                    if parser_cursor.peek() == Some('}') { break; }
+                }
                 ///////// TODO:  In line alterations
                 if parser_cursor.peek().unwrap() == '#' && parser_cursor.current().unwrap() == ' '{
                     if is_keyword(parser_cursor ," #font", true){
@@ -730,6 +706,7 @@ fn config_func(parser_cursor: &mut ParserCursor)->Card{
                        ("valign", ConfigKwds::valign, Str),
                        ("font", ConfigKwds::font, Str),
                        ("font_color", ConfigKwds::font_color, Arr),
+                       ("text_position", ConfigKwds::text_position, Arr),
                        ("font_size", ConfigKwds::font_size, Num)],
                      "#config");
     Card::ConfigCard(card)
