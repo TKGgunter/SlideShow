@@ -1,0 +1,41 @@
+//Thoth Gunter
+#config(
+background_color= [0.2, 0.2, 0.2],
+font_color= [150, 150, 50],
+font_size = 0.05,
+)
+
+#slide()
+Hey I made a slide show pdf creation tool.
+
+This is a test of the settings.
+
+Vertical align testing
+
+testing #newline
+sadf #newline
+testing #newline
+sadf #newline
+testing #newline
+sadf #newline
+testing #newline
+sadf #newline
+
+#slide
+You can find the code here:
+
+github.com/TKGgunter/SlideShow
+
+
+#slide
+#font(position=[0.4, 0.9], size=45, color=[0.65, 0.65, 0.65]){ Pre-alpha boys #newline
+What happens when I do this? #newline
+ASDF
+}
+
+Something?
+
+#slide( font_color =[0.0, 0.99, 0])
+This #font(color=[0.99, 0, 0], size=0.1){KILL Yatta}That
+
+A measage to 

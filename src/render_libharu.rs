@@ -2,7 +2,7 @@
 //
 //TODO: 
 //+Handle error codes!
-//+Make right and center align work when using a font style change
+//+Fix Valignment
 
 #![allow(dead_code)]
 
@@ -309,8 +309,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
         let mut delta_horizontal_multiples = 0;
         let mut temp_text_string = String::new();
         let mut prev_row = 0;
-        //for  (i, iter) in 0..slide_card.slide_data.iter().enumerate(){
-        for  i in 0..slide_card.slide_data.len(){//iter().enumerate(){
+        for  i in 0..slide_card.slide_data.len(){
             if i == 0 {
                 prev_row = slide_card.slide_data[i].text_row;
             }
@@ -319,15 +318,37 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                     let temp_string = match_value_strdata("", &slide_card.slide_data[i].data);
                     if temp_string == "".to_string(){}
                     else{
-                        delta_row += 1;
                         //We need to concate strings until we get to a new line then do the text
                         //width caluclation
                         if (slide_card.slide_data[i].text_row - prev_row) > 1{
                             delta_horizontal = 0.0;
                         }
                         unsafe{
+
+                            //TODO:: NASTY
+                            let mut temp_font_size = font_size * 1.0;
+                            match slide_card.slide_data[i].config{
+                                Some(ref config) => { 
+                                    for iter_config_data in config.config_data.iter(){
+                                        match iter_config_data.kwd{
+
+                                            ConfigKwds::font_size=>{
+                                                let mut _font_size = match_value_f32data(&font_size, &iter_config_data.data);
+                                                if _font_size <= 1.0{
+                                                    _font_size *= slide_height;
+                                                }
+
+                                                temp_font_size = _font_size;
+                                            },
+                                            _=>{}
+                                        }
+                                    }
+                                },
+                                _=>{}
+                            }
+
                             let font = HpdfFont(HPDF_GetFont (pdf.0, CString::new("Helvetica").unwrap().as_ptr(), ptr::null_mut()));
-                            HPDF_Page_SetFontAndSize (page.0, font.0, font_size*1.0);
+                            HPDF_Page_SetFontAndSize (page.0, font.0, temp_font_size);
                             delta_horizontal += HPDF_Page_TextWidth( page.0,  cstring!(temp_string.as_str()).as_ptr() );
                             delta_horizontal_multiples += 1;
                         }
@@ -344,29 +365,33 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                 vec_delta_horizontal.push(delta_horizontal);
                             }
                             delta_horizontal_multiples = 0;
+                            delta_row += 1;
                         }
                     }
                 },
                 _=>{}
             }
+
+            //TODO: 
+            //?Does this need to be in this loop?
+            //Peek and look at all the text in the slide to determine where to start our cursor vertically
+            //This is all down to do vertical center
+            //Currently assuming all rows have the same font and font size
+            if (slide_card.slide_data[i].text_row - prev_row) > 1 {
+                if text_valign == VAlignment::Center{
+                    
+                    cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height + font_size * delta_row as f32 / 2.0;
+                }
+                else if text_valign == VAlignment::Bottom{
+                    cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height + font_size * delta_row as f32;
+                }
+                else{
+                        cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height;
+                }
+            }
             prev_row = slide_card.slide_data[i].text_row;
 
-            if text_valign == VAlignment::Center{
-                //TODO: 
-                //Peek and look at all the text in the slide to determine where to start our cursor vertically
-                //This is all down to do vertical center
-                //Currently assuming all rows have the same font and font size
-                
-                cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height + font_size * delta_row as f32 / 2.0;
-            }
-            else if text_valign == VAlignment::Bottom{
-                cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height + font_size * delta_row as f32;
-            }
-            else{
-                    cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height;
-            }
         }
-
     }
     //
     
@@ -378,12 +403,16 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
     //let mut temp_align = None;
     //let mut temp_font = None;
     let mut temp_default_cursor_x = 0.0;
+    let mut next_text_row = 0;
     let mut text_row = 0;
     let mut prev_text_row = 0;
     let mut vec_delta_horizontal_cursor = 0;
-    for iter in slide_card.slide_data.iter(){
-        prev_text_row = text_row;
-        text_row = iter.text_row;
+    //for iter in slide_card.slide_data.iter(){
+    let mut _iter = slide_card.slide_data.iter().peekable();
+    loop{
+        let __iter = _iter.next();
+        if __iter == None{ break; }
+        let iter = __iter.unwrap();
         match iter.config{
             Some(ref config_card) => {
                 for iter_config in config_card.config_data.iter(){
@@ -438,6 +467,9 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                 if temp_string == "".to_string(){
                 }
                 else{
+                    prev_text_row = text_row;
+                    text_row = iter.text_row;
+                    next_text_row = match _iter.peek(){ Some(_next_iter)=> _next_iter.text_row, None=>text_row*1};
                     unsafe{
                         //TODO: This is temparary we only want fonts from ttf files
                         let font = HpdfFont(HPDF_GetFont (pdf.0, CString::new("Helvetica").unwrap().as_ptr(), ptr::null_mut()));
@@ -461,6 +493,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         //TODO: 
                         //I can't believe this works with font example...
                         //Why does this work
+                            println!("{} {} {} {} ", temp_string, text_row, prev_text_row, next_text_row);
                         if (text_row - prev_text_row) > 1 {
                             cursor[0] = cloned_document_settings.slide_text_pos[0] * slide_width;
                             cursor[0] = cursor[0] - delta*vec_delta_horizontal[vec_delta_horizontal_cursor];//- delta;
@@ -468,6 +501,13 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         //TODO: Use correct next line thing
                             cursor[1] -= font_size; 
                         }
+                        //TODO: Bad hack
+                        //else if (next_text_row - text_row) > 1 {
+                        //    cursor[0] = cloned_document_settings.slide_text_pos[0] * slide_width;
+                        //    cursor[0] = cursor[0] - delta*vec_delta_horizontal[vec_delta_horizontal_cursor];//- delta;
+                        //    
+                        //    cursor[1] -= font_size; 
+                        //}
                             vec_delta_horizontal_cursor += 1;
 
                         if temp_cursor.is_some() {

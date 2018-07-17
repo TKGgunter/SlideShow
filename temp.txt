@@ -1,31 +1,17 @@
-//Thoth Gunter
 #config(
 background_color= [0.2, 0.2, 0.2],
 font_color= [150, 150, 50],
 font_size = 0.05,
 )
+#slide(align="center", text_position=[0.5, 0.5])
 
-#slide()
-Hey I made a slide show pdf creation tool.
+This slide details the implementation
 
-This is a test of the settings.
+of the slideshow program.
 
+#font(color=[0.9, 0.1, 0.1])Step one create a parser
 
-#slide
-You can find the code here:
+Step two render that shit and 
 
-github.com/TKGgunter/SlideShow
+sqash a lot of bugs
 
-
-#slide
-#font(position=[0.4, 0.9], size=45, color=[0.65, 0.65, 0.65]){ Pre-alpha boys #newline
-What happens when I do this? #newline
-ASDF
-}
-
-Something?
-
-#slide( font_color =[0.0, 0.99, 0])
-This #font(color=[0.99, 0, 0]){ KILL Yatta } That
-
-A measage to 

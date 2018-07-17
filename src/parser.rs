@@ -504,10 +504,11 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
                 }
             }
             else {
+                let text_row = parser_cursor.row;
                 card.slide_data.push( SlideData{ config: None,
                                                  kwd: ConfigKwds::text,
                                                  data: gather_value(parser_cursor, LexType::SlideStr, None),
-                                                 text_row: parser_cursor.row}); 
+                                                 text_row: text_row }); 
             }
 
         /////////////////////////
@@ -670,7 +671,6 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_ty
                         if p == '}' { break; }
                     } else {break;}
                     if parser_cursor.next() == None { break; } //Redunent?
-                    value.push(' ');
                     continue; 
                 }
 
