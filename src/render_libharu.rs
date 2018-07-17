@@ -464,9 +464,6 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         if (text_row - prev_text_row) > 1 {
                             cursor[0] = cloned_document_settings.slide_text_pos[0] * slide_width;
                             cursor[0] = cursor[0] - delta*vec_delta_horizontal[vec_delta_horizontal_cursor];//- delta;
-                            println!(" {}", temp_string);
-                            println!("{} {} ",vec_delta_horizontal[vec_delta_horizontal_cursor], delta  );
-                            println!("{:?} ",vec_delta_horizontal  );
                             
                         //TODO: Use correct next line thing
                             cursor[1] -= font_size; 
