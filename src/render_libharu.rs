@@ -302,22 +302,55 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
     //Vertical Alignment code
     //Should think about moved out at some point
+    let mut vec_delta_horizontal = Vec::new();
     {
-        if text_valign != VAlignment::Top{
-            let mut delta_row = 1;
-            for  iter in slide_card.slide_data.iter(){
-                match iter.kwd{
-                    ConfigKwds::text=>{
-                        let temp_string = match_value_strdata("", &iter.data);
-                        if temp_string == "".to_string(){}
-                        else{
-                            delta_row += 1;
-                        }
-                    },
-                    _=>{}
-                }
+        let mut delta_row = 1;
+        let mut delta_horizontal = 0.0;
+        let mut delta_horizontal_multiples = 0;
+        let mut temp_text_string = String::new();
+        let mut prev_row = 0;
+        //for  (i, iter) in 0..slide_card.slide_data.iter().enumerate(){
+        for  i in 0..slide_card.slide_data.len(){//iter().enumerate(){
+            if i == 0 {
+                prev_row = slide_card.slide_data[i].text_row;
             }
-       
+            match slide_card.slide_data[i].kwd{
+                ConfigKwds::text=>{
+                    let temp_string = match_value_strdata("", &slide_card.slide_data[i].data);
+                    if temp_string == "".to_string(){}
+                    else{
+                        delta_row += 1;
+                        //We need to concate strings until we get to a new line then do the text
+                        //width caluclation
+                        if (slide_card.slide_data[i].text_row - prev_row) > 1{
+                            delta_horizontal = 0.0;
+                        }
+                        unsafe{
+                            let font = HpdfFont(HPDF_GetFont (pdf.0, CString::new("Helvetica").unwrap().as_ptr(), ptr::null_mut()));
+                            HPDF_Page_SetFontAndSize (page.0, font.0, font_size*1.0);
+                            delta_horizontal += HPDF_Page_TextWidth( page.0,  cstring!(temp_string.as_str()).as_ptr() );
+                            delta_horizontal_multiples += 1;
+                        }
+                        if i+1 < slide_card.slide_data.len(){ 
+                            if (slide_card.slide_data[i+1].text_row - slide_card.slide_data[i].text_row) > 1 {
+                                for i in 0..delta_horizontal_multiples {
+                                    vec_delta_horizontal.push(delta_horizontal);
+                                }
+                                delta_horizontal_multiples = 0;
+                            }
+                        }
+                        if (slide_card.slide_data[i].text_row - prev_row) > 1 {
+                            for i in 0..delta_horizontal_multiples {
+                                vec_delta_horizontal.push(delta_horizontal);
+                            }
+                            delta_horizontal_multiples = 0;
+                        }
+                    }
+                },
+                _=>{}
+            }
+            prev_row = slide_card.slide_data[i].text_row;
+
             if text_valign == VAlignment::Center{
                 //TODO: 
                 //Peek and look at all the text in the slide to determine where to start our cursor vertically
@@ -329,10 +362,11 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
             else if text_valign == VAlignment::Bottom{
                 cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height + font_size * delta_row as f32;
             }
+            else{
+                    cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height;
+            }
         }
-        else{
-                cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height;
-        }
+
     }
     //
     
@@ -346,6 +380,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
     let mut temp_default_cursor_x = 0.0;
     let mut text_row = 0;
     let mut prev_text_row = 0;
+    let mut vec_delta_horizontal_cursor = 0;
     for iter in slide_card.slide_data.iter(){
         prev_text_row = text_row;
         text_row = iter.text_row;
@@ -417,16 +452,9 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         let mut delta = 0.0;
                         if text_align == Alignment::Center{
                             delta = 0.5; 
-                            unsafe{
-                                HPDF_Page_SetFontAndSize (page.0, font.0, _font_size*1.0);
-                                delta *= HPDF_Page_TextWidth( page.0,  cstring!(temp_string.as_str()).as_ptr() );
-                            }
                         }
                         else if text_align == Alignment::Right{
-                            unsafe{
-                                HPDF_Page_SetFontAndSize (page.0, font.0, _font_size*1.0);
-                                delta = HPDF_Page_TextWidth( page.0,  cstring!(temp_string.as_str()).as_ptr() );
-                            }
+                            delta = 1.0; 
                         }
 
 
@@ -435,13 +463,32 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         //Why does this work
                         if (text_row - prev_text_row) > 1 {
                             cursor[0] = cloned_document_settings.slide_text_pos[0] * slide_width;
-                            cursor[0] = cursor[0] - delta;
+                            cursor[0] = cursor[0] - delta*vec_delta_horizontal[vec_delta_horizontal_cursor];//- delta;
+                            println!(" {}", temp_string);
+                            println!("{} {} ",vec_delta_horizontal[vec_delta_horizontal_cursor], delta  );
+                            println!("{:?} ",vec_delta_horizontal  );
                             
                         //TODO: Use correct next line thing
                             cursor[1] -= font_size; 
                         }
+                            vec_delta_horizontal_cursor += 1;
 
                         if temp_cursor.is_some() {
+                            if text_align == Alignment::Center{
+                                delta = 0.5; 
+                                unsafe{
+                                    HPDF_Page_SetFontAndSize (page.0, font.0, _font_size*1.0);
+                                    delta *= HPDF_Page_TextWidth( page.0,  cstring!(temp_string.as_str()).as_ptr() );
+                                }
+                            }
+                            else if text_align == Alignment::Right{
+                                delta = 1.0; 
+                                unsafe{
+                                    HPDF_Page_SetFontAndSize (page.0, font.0, _font_size*1.0);
+                                    delta = HPDF_Page_TextWidth( page.0,  cstring!(temp_string.as_str()).as_ptr() );
+                                }
+                            }
+
                             temp_cursor = Some( [temp_default_cursor_x - delta, temp_cursor.unwrap()[1] - _font_size * temp_font_braced_line.unwrap()] ); //TODO: Use correct next line thing
                         }
                        
