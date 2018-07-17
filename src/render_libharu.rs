@@ -501,13 +501,6 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         //TODO: Use correct next line thing
                             cursor[1] -= font_size; 
                         }
-                        //TODO: Bad hack
-                        //else if (next_text_row - text_row) > 1 {
-                        //    cursor[0] = cloned_document_settings.slide_text_pos[0] * slide_width;
-                        //    cursor[0] = cursor[0] - delta*vec_delta_horizontal[vec_delta_horizontal_cursor];//- delta;
-                        //    
-                        //    cursor[1] -= font_size; 
-                        //}
                             vec_delta_horizontal_cursor += 1;
 
                         if temp_cursor.is_some() {
@@ -584,7 +577,7 @@ pub fn render(slides: &Vec<Card>){
                                                     slide_height: 600.0,
                                                     slide_width:  800.0,
                                                     slide_font_size: 32.0,
-                                                    slide_font_color: [0.0, 0.0, 0.0],
+                                                    slide_font_color: [1.0, 1.0, 1.0],
                                                     slide_text_pos: [0.5, 0.5],
                                                     slide_font: "Times", //Should prob be a handle of some kind.
                                                 };
