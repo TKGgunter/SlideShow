@@ -5,13 +5,16 @@ font_size = 0.05,
 )
 #slide(align="center", text_position=[0.5, 0.5])
 
-This slide details the implementation
-
+This slide details the implementation #newline
 of the slideshow program.
 
 #font(color=[0.9, 0.1, 0.1])Step one create a parser
 
-Step two render that shit and 
-
+Step two render that shit and  #newline
 sqash a lot of bugs
 
+
+#slide
+HAHA #font(size=42){ LOL} Killa
+
+sdf

@@ -320,9 +320,6 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                     else{
                         //We need to concate strings until we get to a new line then do the text
                         //width caluclation
-                        if (slide_card.slide_data[i].text_row - prev_row) > 1{
-                            delta_horizontal = 0.0;
-                        }
                         unsafe{
 
                             //TODO:: NASTY
@@ -358,6 +355,8 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                     vec_delta_horizontal.push(delta_horizontal);
                                 }
                                 delta_horizontal_multiples = 0;
+                                delta_horizontal = 0.0;
+                                delta_row += 1;
                             }
                         }
                         if (slide_card.slide_data[i].text_row - prev_row) > 1 {
@@ -365,7 +364,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                 vec_delta_horizontal.push(delta_horizontal);
                             }
                             delta_horizontal_multiples = 0;
-                            delta_row += 1;
+                            delta_horizontal = 0.0;
                         }
                     }
                 },
@@ -493,10 +492,10 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         //TODO: 
                         //I can't believe this works with font example...
                         //Why does this work
-                            println!("{} {} {} {} ", temp_string, text_row, prev_text_row, next_text_row);
                         if (text_row - prev_text_row) > 1 {
                             cursor[0] = cloned_document_settings.slide_text_pos[0] * slide_width;
                             cursor[0] = cursor[0] - delta*vec_delta_horizontal[vec_delta_horizontal_cursor];//- delta;
+                            println!("{} {} {} ", temp_string, delta, cursor[0]);
                             
                         //TODO: Use correct next line thing
                             cursor[1] -= font_size; 
