@@ -305,13 +305,12 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
     let mut vec_delta_horizontal = Vec::new();
 
     #[derive(Debug)]
-    struct TextProperties<'a> {
+    struct TextProperties {
         size: f32,
         color: [f32;3],
         delta_horizontal: f32,
-        align: Alignment,
-        valign: VAlignment, //<= should this be here?
-        text: &'a str,
+        lines_from_init: u32,
+        text: String,
         //font
         //style
     };
@@ -332,11 +331,12 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                     let temp_string = match_value_strdata("", &slide_card.slide_data[i].data);
                     if temp_string == "".to_string(){}
                     else{
-                        //We need to concate strings until we get to a new line then do the text
+                        //TODO We need to concate strings until we get to a new line then do the text
                         //width calculation
 
                             //TODO:: NASTY
                             let mut temp_font_size = font_size * 1.0;
+                            let mut temp_font_color = font_color.clone();
                             match slide_card.slide_data[i].config{
                                 Some(ref config) => { 
 
@@ -344,16 +344,6 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                     for iter_config in config.config_data.iter(){
 
                                         match iter_config.kwd{
-                                    //        ConfigKwds::text_position=>{
-                                    //            let mut _cursor = [0.0f32;2];
-                                    //            match_value_arrf32data(&mut _cursor, &iter_config.data);
-                                    //            if _cursor[0] < 1.0 && _cursor[1] < 1.0 {
-                                    //                _cursor[0] *= slide_width;
-                                    //                temp_default_cursor_x = _cursor[0];
-                                    //                _cursor[1] *= slide_height;
-                                    //            }
-                                    //            temp_cursor = Some(_cursor);
-                                    //        },
                                             ConfigKwds::font_size=>{
                                                 let mut _font_size = match_value_f32data(&font_size, &iter_config.data);
                                                 if _font_size <= 1.0{
@@ -362,19 +352,14 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
                                                 temp_font_size = _font_size;
                                             },
-                                    //        ConfigKwds::font_color=>{
-                                    //            let mut _font_color = font_color.clone();
-                                    //            match_value_arrf32data(&mut _font_color, &iter_config.data);
-                                    //            for i in 0.._font_color.len(){
-                                    //                if _font_color[i] > 1.0{
-                                    //                    _font_color[i] = _font_color[i] / 255.0;
-                                    //                }
-                                    //            }
-                                    //            temp_font_color = Some(_font_color);
-                                    //        },
-                                    //        ConfigKwds::font_braced=>{
-                                    //            temp_font_braced_line = Some( match_value_f32data(&0.0, &iter_config.data));
-                                    //        }
+                                            ConfigKwds::font_color=>{
+                                                match_value_arrf32data(&mut temp_font_color, &iter_config.data);
+                                                for i in 0..temp_font_color.len(){
+                                                    if temp_font_color[i] > 1.0{
+                                                        temp_font_color[i] = temp_font_color[i] / 255.0;
+                                                    }
+                                                }
+                                            },
                                             _=>{
                                                 println!("What ever you want we don't do!");
                                             }
@@ -384,34 +369,58 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
 
 
-
-
-
-
-
                                 },
                                 _=>{}
                             }
                         unsafe{
 
                             let font = HpdfFont(HPDF_GetFont (pdf.0, CString::new("Helvetica").unwrap().as_ptr(), ptr::null_mut()));
-                            HPDF_Page_SetFontAndSize (page.0, font.0, temp_font_size);
+                            HPDF_Page_SetFontAndSize (page.0, font.0, temp_font_size.clone());
                             delta_horizontal += HPDF_Page_TextWidth( page.0,  cstring!(temp_string.as_str()).as_ptr() );
                             delta_horizontal_multiples += 1;
 
-                            vec_text_properties.push(
-                                TextProperties{ size: 0.0,
-                                color:[0.0, 0.0, 0.0],
-                                delta_horizontal: 0.0,
-                                align: Alignment::Center,
-                                valign: VAlignment::Center,
-                                text: ""});
+                            let margin = 500.0;
+                            if delta_horizontal > margin && temp_string.contains(" "){
+                                delta_horizontal -= HPDF_Page_TextWidth( page.0,  cstring!(temp_string.as_str()).as_ptr() );
+                                for word in temp_string.split_whitespace(){
+                                    delta_horizontal += HPDF_Page_TextWidth( page.0,  cstring!(word).as_ptr() );
+                                    vec_text_properties.push(
+                                        TextProperties{ size: temp_font_size,
+                                        color:temp_font_color,
+                                        delta_horizontal: 0.0,
+                                        lines_from_init: 0,
+                                        text: word.to_string()});
+                                    if delta_horizontal > margin{
+                                        delta_horizontal = 0.0;
+                                        let offset = vec_text_properties.len();
+                                        vec_text_properties[ offset - 1].lines_from_init += 1;
+
+                                    }
+                                    else{
+                                        delta_horizontal_multiples += 1;
+                                    }
+                                }
+                            }
+                            else{
+                                vec_text_properties.push(
+                                    TextProperties{ size: temp_font_size,
+                                    color:temp_font_color,
+                                    delta_horizontal: 0.0,
+                                    lines_from_init: 0,
+                                    text: temp_string});
+
+                            }
+
                         }
                         if i+1 < slide_card.slide_data.len(){ 
                             if (slide_card.slide_data[i+1].text_row - slide_card.slide_data[i].text_row) > 1 {
+                                let offset = vec_delta_horizontal.len();
+                                let lines_from_init = if offset == 0 { vec_text_properties[0].lines_from_init+1} else {vec_text_properties[offset-1].lines_from_init + 1};
                                 for i in 0..delta_horizontal_multiples {
                                     vec_delta_horizontal.push(delta_horizontal);
-                                    vec_text_properties[i + vec_delta_horizontal.len() - 1].delta_horizontal = delta_horizontal;
+                                    //I think this caused a bug when offset is > 1
+                                    vec_text_properties[offset + i].delta_horizontal = delta_horizontal;
+                                    vec_text_properties[offset + i].lines_from_init = lines_from_init;
                                 }
                                 delta_horizontal_multiples = 0;
                                 delta_horizontal = 0.0;
@@ -419,11 +428,12 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                             }
                         }
                         if (slide_card.slide_data[i].text_row - prev_row) > 1 {
+                            let offset = vec_delta_horizontal.len();
+                            let lines_from_init = if offset == 0 { vec_text_properties[0].lines_from_init+1} else {vec_text_properties[offset-1].lines_from_init + 1};
                             for i in 0..delta_horizontal_multiples {
                                 vec_delta_horizontal.push(delta_horizontal);
-                                //This is temp and prob doesn't work.
-                                //Just thinking things through
-                                vec_text_properties[i + vec_delta_horizontal.len() - 1].delta_horizontal = delta_horizontal;
+                                vec_text_properties[offset + i].delta_horizontal = delta_horizontal;
+                                vec_text_properties[offset + i].lines_from_init = lines_from_init;
                             }
                             delta_horizontal_multiples = 0;
                             delta_horizontal = 0.0;
@@ -433,7 +443,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                 _=>{}
             }
 
-            println!("");
+            println!("{:?}", vec_text_properties);
             //TODO: 
             //?Does this need to be in this loop?
             //Peek and look at all the text in the slide to determine where to start our cursor vertically

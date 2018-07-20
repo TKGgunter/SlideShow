@@ -3,7 +3,8 @@ background_color= [0.2, 0.2, 0.2],
 font_color= [150, 150, 50],
 font_size = 0.05,
 )
-#slide(align="center", text_position=[0.5, 0.5])
+
+#slide
 
 This slide details the implementation #newline
 of the slideshow program.
