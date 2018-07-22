@@ -2,6 +2,7 @@
 background_color= [0.2, 0.2, 0.2],
 font_color= [150, 150, 50],
 font_size = 0.05,
+//valign = "top",
 )
 
 #slide
@@ -18,4 +19,10 @@ sqash a lot of bugs
 #slide
 HAHA #font(size=42){ LOL} Killa
 
-sdf
+#font(position= [0.2, 0.2]) SDFASDF
+
+
+
+#slide(text_position= [0.05, 0.8], text_margin= 0.8)
+I don't like shit and I don't go outside! 
+I don't like shit and I don't go outside!

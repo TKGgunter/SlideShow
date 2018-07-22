@@ -447,6 +447,7 @@ fn slide_config(parser_cursor: &mut ParserCursor)->ConfigCard{
                                      ("align", ConfigKwds::align, LexType::Str),
                                      ("valign", ConfigKwds::valign, LexType::Str),
                                      ("text_position", ConfigKwds::text_position, LexType::Arr),
+                                     ("text_margin", ConfigKwds::text_margin, LexType::Num),
                                      ("font_color", ConfigKwds::font_color, LexType::Arr),
                                     ], "#slide")
 }
