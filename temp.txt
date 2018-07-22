@@ -1,3 +1,16 @@
+//TODO
+//left_div
+//right_div
+//div
+//header#
+//filled_rect
+//filled_stadium
+
+//Images
+
+//Templates
+
+
 #config(
 background_color= [0.2, 0.2, 0.2],
 font_color= [150, 150, 50],
@@ -12,7 +25,7 @@ of the slideshow program.
 
 #font(color=[0.9, 0.1, 0.1])Step one create a parser
 
-Step two render that shit and  #newline
+Step two render that shit and #newline
 sqash a lot of bugs
 
 
@@ -22,7 +35,6 @@ HAHA #font(size=42){ LOL} Killa
 #font(position= [0.2, 0.2]) SDFASDF
 
 
-
-#slide(text_position= [0.05, 0.8], text_margin= 0.8)
+#slide(text_position= [0.5, 0.8], text_margin= 0.8)
 I don't like shit and I don't go outside! 
 I don't like shit and I don't go outside!

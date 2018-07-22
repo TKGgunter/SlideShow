@@ -2,7 +2,6 @@
 //
 //TODO: 
 //+Handle error codes!
-//+Fix Valignment
 
 #![allow(dead_code)]
 
@@ -82,7 +81,6 @@ impl HpdfDoc{
 }
 
 impl HpdfPage{
-    //TODO
     pub fn set_page_dimensions(&self, width: &f32, height: &f32){
         unsafe{
             HPDF_Page_SetWidth (self.0, *width);
@@ -119,7 +117,6 @@ impl HpdfPage{
 }
 
 impl HpdfFont{
-    //HpdfFont(HPDF_GetFont (pdf.0, CString::new("Helvetica").unwrap().as_ptr(), ptr::null_mut()));
     pub fn get_font_handle(pdf: &HpdfDoc, font_name: &str)->HpdfFont{unsafe{
         HpdfFont(HPDF_GetFont (pdf.0, cstring!(font_name).as_ptr(), ptr::null_mut()))
 
@@ -332,7 +329,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
     
     //Vertical Alignment code
     //Should think about moved out at some point
-    let mut vec_delta_horizontal = Vec::new();
+    let mut counter_delta_horizontal = 0;
 
     #[derive(Debug)]
     struct TextAndProperties {
@@ -433,9 +430,10 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                     delta_horizontal_mm_multiples += 1;
 
                     let margin = temp_text_margin;
-                    let mut margin_vertical_lines = 0;
+                    let mut margin_vertical_lines = 1;
                     if delta_horizontal_mm > margin && temp_string.contains(" "){
                         delta_horizontal_mm -= current_text_width;
+                        delta_horizontal_mm_multiples -= 1;
                         for word in temp_string.split_whitespace(){
 
                             let word_space = word.to_string() + " ";
@@ -450,18 +448,37 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                     delta_horizontal_mm: 0.0,
                                     delta_vertical_lines: margin_vertical_lines.clone(),
                                     cursor: temp_cursor.clone(),
-                                    text: word_space,
+                                    text: word_space.clone(),
                                 });
 
                             if delta_horizontal_mm > margin{
+
+                                delta_horizontal_mm -= calc_text_width( &pdf, &page, &word_space, "Helvetica", &temp_font_size);
+                                //loop over previous lines and set the delta_vertical
+                                let offset = counter_delta_horizontal;
+                                for i in 0..delta_horizontal_mm_multiples {
+                                    counter_delta_horizontal += 1;
+                                    vec_text_and_properties[offset + i].delta_horizontal_mm = delta_horizontal_mm;
+                                }
+                                delta_horizontal_mm_multiples = 0;
+                                delta_row += 1;
+
                                 delta_horizontal_mm = 0.0;
                                 let offset = vec_text_and_properties.len();
-                                vec_text_and_properties[ offset - 1].delta_vertical_lines += 1;
                                 margin_vertical_lines += 1;
                             }
                             else{
                                 delta_horizontal_mm_multiples += 1;
                             }
+                        }
+                        {
+                            let offset = counter_delta_horizontal;
+                            let delta_vertical_lines = if offset == 0 { vec_text_and_properties[0].delta_vertical_lines+1} else {vec_text_and_properties[offset-1].delta_vertical_lines + 1};
+                            for i in 0..delta_horizontal_mm_multiples {
+                                counter_delta_horizontal += 1;
+                                vec_text_and_properties[offset + i].delta_horizontal_mm = delta_horizontal_mm;
+                            }
+                            delta_horizontal_mm_multiples = 0;
                         }
                     }
                     else{
@@ -477,34 +494,35 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                 text: temp_string
                             });
 
-                    }
-
-                    if i+1 < slide_card.slide_data.len(){ 
-                        if (slide_card.slide_data[i+1].text_row - slide_card.slide_data[i].text_row) > 1 {
-                            let offset = vec_delta_horizontal.len();
+                        if i+1 < slide_card.slide_data.len(){ 
+                            if (slide_card.slide_data[i+1].text_row - slide_card.slide_data[i].text_row) > 1 {
+                                let offset = counter_delta_horizontal;
+                                let delta_vertical_lines = if offset == 0 { vec_text_and_properties[0].delta_vertical_lines+1} else {vec_text_and_properties[offset-1].delta_vertical_lines + 1};
+                                for i in 0..delta_horizontal_mm_multiples {
+                                    counter_delta_horizontal += 1;
+                                    vec_text_and_properties[offset + i].delta_horizontal_mm = delta_horizontal_mm;
+                                    vec_text_and_properties[offset + i].delta_vertical_lines = delta_vertical_lines;
+                                }
+                                delta_horizontal_mm_multiples = 0;
+                                delta_horizontal_mm = 0.0;
+                                delta_row += 1;
+                            }
+                        }
+                        if (slide_card.slide_data[i].text_row - prev_row) > 1 {
+                            let offset = counter_delta_horizontal;
                             let delta_vertical_lines = if offset == 0 { vec_text_and_properties[0].delta_vertical_lines+1} else {vec_text_and_properties[offset-1].delta_vertical_lines + 1};
                             for i in 0..delta_horizontal_mm_multiples {
-                                vec_delta_horizontal.push(delta_horizontal_mm);
-                                //I think this caused a bug when offset is > 1
+                                counter_delta_horizontal += 1;
                                 vec_text_and_properties[offset + i].delta_horizontal_mm = delta_horizontal_mm;
                                 vec_text_and_properties[offset + i].delta_vertical_lines = delta_vertical_lines;
                             }
                             delta_horizontal_mm_multiples = 0;
                             delta_horizontal_mm = 0.0;
-                            delta_row += 1;
                         }
+
+
                     }
-                    if (slide_card.slide_data[i].text_row - prev_row) > 1 {
-                        let offset = vec_delta_horizontal.len();
-                        let delta_vertical_lines = if offset == 0 { vec_text_and_properties[0].delta_vertical_lines+1} else {vec_text_and_properties[offset-1].delta_vertical_lines + 1};
-                        for i in 0..delta_horizontal_mm_multiples {
-                            vec_delta_horizontal.push(delta_horizontal_mm);
-                            vec_text_and_properties[offset + i].delta_horizontal_mm = delta_horizontal_mm;
-                            vec_text_and_properties[offset + i].delta_vertical_lines = delta_vertical_lines;
-                        }
-                        delta_horizontal_mm_multiples = 0;
-                        delta_horizontal_mm = 0.0;
-                    }
+
                 }
             },
             _=>{}
@@ -521,7 +539,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                 cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height + font_size * delta_row as f32;
             }
             else{
-                    cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height;
+                cursor[1] = cloned_document_settings.slide_text_pos[1] * slide_height;
             }
         }
         prev_row = slide_card.slide_data[i].text_row;
@@ -541,12 +559,19 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
     //};
     //
     
+    //TODO:
+    //Alignment is wrong when word wrapping
+    //Test right align
+    //Text Bottom align
     let mut prev_line = 0;
     let mut text_position = cursor.clone();
     for iter in vec_text_and_properties.iter(){
         if prev_line != iter.delta_vertical_lines{
             if iter.cursor.is_some() == false {
                 text_position = cursor.clone();
+            }
+            else{
+                text_position = iter.cursor.unwrap();
             }
             if iter.align == Alignment::Center{
                 text_position[0] -= iter.delta_horizontal_mm * 0.5;
@@ -558,10 +583,9 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
             text_position[1] -= iter.delta_vertical_lines as f32 * iter.size;
         } 
-        //If we have a #font with mulitple files it prob will not work correctly.
-        if iter.cursor.is_some() {
-            text_position = iter.cursor.unwrap();
-        }
+
+
+        //println!("ASDF {:?} {:?} {} {:?}", iter.text, iter.align, iter.delta_horizontal_mm, text_position);
         let font = HpdfFont::get_font_handle(&pdf, "Helvetica");
         text_position = page.render_text( &iter.text, &iter.size, &font, &iter.color, &text_position);
     }
