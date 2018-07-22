@@ -38,3 +38,22 @@ HAHA #font(size=42){ LOL} Killa
 #slide(text_position= [0.5, 0.8], text_margin= 0.8)
 I don't like shit and I don't go outside! 
 I don't like shit and I don't go outside!
+
+
+#slide
+#font(position=[0.05, 0.9], size=0.15, align="left")Chicken Soup
+
+
+Does this work? #newline
+Maybe not!
+
+#slide
+
+#font(position=[0.2, 0.8]){
+I don't like shit and I don't go outside! #newline 
+I don't like shit and I don't go outside! #newline
+I don't like shit and I don't go outside! #newline
+I don't like shit and I don't go outside! #newline
+
+}
+

@@ -361,12 +361,11 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                 let temp_string = match_value_strdata("", &slide_card.slide_data[i].data);
                 if temp_string == "".to_string(){}
                 else{
-                    //TODO We need to concate strings until we get to a new line then do the text
-                    //width calculation
 
                     //TODO:: NASTY
                     let mut temp_font_size = font_size * 1.0;
                     let mut temp_font_color = font_color.clone();
+                    let mut temp_text_align = text_align.clone();
                     match slide_card.slide_data[i].config{
                         Some(ref config) => { 
 
@@ -409,6 +408,21 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
                                         temp_text_margin = _text_margin;
                                     },
+                                    ConfigKwds::text_align=>{
+                                        let temp_align = match_value_strdata("", &iter_config.data).to_lowercase();
+                                        if temp_align == "left"{
+                                            temp_text_align = Alignment::Left;
+                                        }
+                                        else if temp_align == "right"{
+                                            temp_text_align = Alignment::Right;
+                                        }
+                                        else if temp_align == "center"{
+                                            temp_text_align = Alignment::Center;
+                                        }
+                                        else {
+                                            print!("Error: Unknown alignment {}", temp_align);
+                                        }
+                                    },
                                     //ConfigKwds::font_braced=>{
                                     //    temp_font_nth_line = Some( match_value_f32data(&0.0, &iter_config.data));
                                     //}
@@ -441,7 +455,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
                             vec_text_and_properties.push(
                                 TextAndProperties{ 
-                                    align: text_align.clone(),
+                                    align: temp_text_align.clone(),
                                     valign: text_valign.clone(),
                                     size: temp_font_size,
                                     color:temp_font_color,
@@ -484,7 +498,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                     else{
                         vec_text_and_properties.push(
                             TextAndProperties{ 
-                                align: text_align.clone(),
+                                align: temp_text_align.clone(),
                                 valign: text_valign.clone(),
                                 size: temp_font_size,
                                 color:temp_font_color,
