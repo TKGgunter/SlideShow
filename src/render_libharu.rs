@@ -56,11 +56,6 @@ pub fn free_hpdf_pdf( pdf: HpdfDoc ) {
 
 
 impl HpdfDoc{
-    //TODO:
-    //We should be able to pass a string, &str and maybe also a PATH. 
-    //Should loading and getting font name be in one step? There doesn't really seem to be a reason
-    //to do one and not the other.  I'm going to do that now and maybe its not the right thing
-    //todo.
     pub fn load_ttf_from_file(&self, file_path: &str )->HpdfFont{
         unsafe{
             let detail_font_name = HPDF_LoadTTFontFromFile (self.0, cstring!(file_path).as_ptr(), HPDF_TRUE);
@@ -189,8 +184,6 @@ pub fn match_value_arrf32data(data: &mut [f32], valuetype: &ValueType){
     }
 }
 
-//TODO: Returning String or to return &str
-//IDK
 #[inline]
 pub fn match_value_strdata(data: &str, valuetype: &ValueType)->String{
     let rt_data = match valuetype{
@@ -297,7 +290,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
         _=>{}
     }
 
-    let mut font        = cloned_document_settings.slide_font;
+    let mut font_name   = cloned_document_settings.slide_font;
     let mut font_size   = cloned_document_settings.slide_font_size;
     let mut font_color  = cloned_document_settings.slide_font_color;
     let mut slide_width = cloned_document_settings.slide_width;
@@ -433,25 +426,26 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
                             }
 
-
-
                         },
                         _=>{}
                     }
 
-                    let current_text_width = calc_text_width( &pdf, &page, &temp_string, "Helvetica", &temp_font_size);
+                    let current_text_width = calc_text_width( &pdf, &page, &temp_string, font_name, &temp_font_size);
                     delta_horizontal_mm += current_text_width;
                     delta_horizontal_mm_multiples += 1;
 
                     let margin = temp_text_margin;
                     let mut margin_vertical_lines = 1;
+
+                    //NOTE
+                    //Word wrap by splitting on words
                     if delta_horizontal_mm > margin && temp_string.contains(" "){
                         delta_horizontal_mm -= current_text_width;
                         delta_horizontal_mm_multiples -= 1;
                         for word in temp_string.split_whitespace(){
 
                             let word_space = word.to_string() + " ";
-                            delta_horizontal_mm += calc_text_width( &pdf, &page, &word_space, "Helvetica", &temp_font_size);
+                            delta_horizontal_mm += calc_text_width( &pdf, &page, &word_space, font_name, &temp_font_size);
 
                             vec_text_and_properties.push(
                                 TextAndProperties{ 
@@ -467,7 +461,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
                             if delta_horizontal_mm > margin{
 
-                                delta_horizontal_mm -= calc_text_width( &pdf, &page, &word_space, "Helvetica", &temp_font_size);
+                                delta_horizontal_mm -= calc_text_width( &pdf, &page, &word_space, font_name, &temp_font_size);
                                 //loop over previous lines and set the delta_vertical
                                 let offset = counter_delta_horizontal;
                                 for i in 0..delta_horizontal_mm_multiples {
@@ -487,7 +481,8 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         }
                         {
                             let offset = counter_delta_horizontal;
-                            let delta_vertical_lines = if offset == 0 { vec_text_and_properties[0].delta_vertical_lines+1} else {vec_text_and_properties[offset-1].delta_vertical_lines + 1};
+                            let delta_vertical_lines = if offset == 0 { vec_text_and_properties[0].delta_vertical_lines+1} 
+                                                       else {vec_text_and_properties[offset-1].delta_vertical_lines + 1};
                             for i in 0..delta_horizontal_mm_multiples {
                                 counter_delta_horizontal += 1;
                                 vec_text_and_properties[offset + i].delta_horizontal_mm = delta_horizontal_mm;
@@ -511,7 +506,9 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         if i+1 < slide_card.slide_data.len(){ 
                             if (slide_card.slide_data[i+1].text_row - slide_card.slide_data[i].text_row) > 1 {
                                 let offset = counter_delta_horizontal;
-                                let delta_vertical_lines = if offset == 0 { vec_text_and_properties[0].delta_vertical_lines+1} else {vec_text_and_properties[offset-1].delta_vertical_lines + 1};
+                                let delta_vertical_lines = if offset == 0 { vec_text_and_properties[0].delta_vertical_lines+1} 
+                                                           else {vec_text_and_properties[offset-1].delta_vertical_lines + 1};
+
                                 for i in 0..delta_horizontal_mm_multiples {
                                     counter_delta_horizontal += 1;
                                     vec_text_and_properties[offset + i].delta_horizontal_mm = delta_horizontal_mm;
@@ -524,7 +521,9 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         }
                         if (slide_card.slide_data[i].text_row - prev_row) > 1 {
                             let offset = counter_delta_horizontal;
-                            let delta_vertical_lines = if offset == 0 { vec_text_and_properties[0].delta_vertical_lines+1} else {vec_text_and_properties[offset-1].delta_vertical_lines + 1};
+                            let delta_vertical_lines = if offset == 0 { vec_text_and_properties[0].delta_vertical_lines+1}
+                                                       else {vec_text_and_properties[offset-1].delta_vertical_lines + 1};
+
                             for i in 0..delta_horizontal_mm_multiples {
                                 counter_delta_horizontal += 1;
                                 vec_text_and_properties[offset + i].delta_horizontal_mm = delta_horizontal_mm;
@@ -543,7 +542,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
         }
 
         //TODO: 
-        //This will need to change to work with word wrap
+        //Test these setting in regard to word wrap!
         if (slide_card.slide_data[i].text_row - prev_row) > 1 {
             if text_valign == VAlignment::Center{
                 
@@ -559,19 +558,6 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
         prev_row = slide_card.slide_data[i].text_row;
 
     }
-    //struct TextAndProperties {
-    //    align: ,
-    //    valign:,
-    //    size: f32,
-    //    color: [f32;3],
-    //    delta_horizontal_mm: f32,
-    //    delta_vertical_lines: u32,
-    //    cursor: Option<[f32;2]>,
-    //    text: String,
-    //    //font
-    //    //style
-    //};
-    //
     
     //TODO:
     //Alignment is wrong when word wrapping
@@ -600,10 +586,9 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
 
         //println!("ASDF {:?} {:?} {} {:?}", iter.text, iter.align, iter.delta_horizontal_mm, text_position);
-        let font = HpdfFont::get_font_handle(&pdf, "Helvetica");
+        let font = HpdfFont::get_font_handle(&pdf, font_name);
         text_position = page.render_text( &iter.text, &iter.size, &font, &iter.color, &text_position);
     }
-
     
     
 }
@@ -614,6 +599,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
 //TODO:
 //This function should return an error if it fails to render the slide
+//PDF save file name
 pub fn render(slides: &Vec<Card>){
     let mut pdf = create_hpdf_pdf();
 
@@ -627,7 +613,7 @@ pub fn render(slides: &Vec<Card>){
                                                     slide_font_color: [1.0, 1.0, 1.0],
                                                     slide_text_pos: [0.5, 0.5],
                                                     slide_text_margin: 1.1, //Purposfully ackwardly long
-                                                    slide_font: "Times", //Should prob be a handle of some kind.
+                                                    slide_font: "Helvetica", //"Times", Should prob be a handle of some kind.
                                                 };
 
     for card in slides.iter(){
