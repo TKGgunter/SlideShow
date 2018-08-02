@@ -1,66 +1,17 @@
-#config(
-width = 254.0,
-height = 190.5,
-background_color = [100,0,100], //array style
-font = [\"Times\", \"ASDF/aSDFA/FASDFA\"],
-font_color = [200, 200, 200],
-align = \"center\"
-extern= \"/path\"
-)
 
 
 #slide
-a
-
 We can write a slide like this. 
 No need for a bracketted structure.
 
 We can create a paragraph with consecutive \\n\\n.
 We can create a new line with #newline
 
-
-#slide(background_color= [150,0,150])
-We can also change slide configurations for specific slides
-
 #slide
-#font(size=42) We can do different sized text
-#font(position=[0.3, 0.5], color=[200,50,50]) Place text where you want
-#font(family=\"Times\", size=32, style=\"bold\", position=[0.2, 0.2]) We can change fonts!
-
-#slide
-#font(position=[122, 40], margin=0.5){
-Something, something, something else and another thing
-
-ASDFAF
+#font(position=[0.1, 0.9]){
+Something #newline
+something something
 }
 
-#slide
-We can even add images
-#image(path=\"/some/path\")
-#image(path=\"/some/path\", position=[0.7, 0.1], width=0.8, height=0.8)
 
-#slide(background_color=[50,0,50])
-New slides are easy!
-#bul So are images!
-#font(position=[0.9, 0.9]){
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-}
-
-#font(position=[0.2,0.5], size=32) And we have auto wrap!
-
-#image(path=\"some.img\", position=[0.6,0.6])
-#font(position=[0.6, 0.55]) Oops, well we have default images :)
-
-#slide
-We can do tex functions and tables too
-
-#tex $y = m x - b$
-
-#tex(position=[0.2, 0.5]){ 
-\\begin{tabular}{ c c c }
- cell1 & cell2 & cell3 \\\\ 
- cell4 & cell5 & cell6 \\\\  
- cell7 & cell8 & cell9    
-\\end{tabular}
-}
 

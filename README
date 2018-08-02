@@ -12,4 +12,7 @@ sudo apt-get install dvipng
 
 
 TODO:
-+Decoupe cursor position corrdinates in parser
++Test font and default text stuff to make sure it all works
++Test div parsing
++Hookup div to renderer
+

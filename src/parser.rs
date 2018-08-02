@@ -329,6 +329,7 @@ fn font_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
                                            data: ValueType::Err,
                                            text_row: parser_cursor.row}; 
                 let slide_data = gather_value(parser_cursor, LexType::SlideStr, Some(LexType::Braced));
+
                 data.data = slide_data; 
                 return_data.push(data);
 
@@ -414,9 +415,9 @@ fn tex_func(parser_cursor: &mut ParserCursor)->SlideData{
 //TODO: Work in progress
 //The div could use a frame work like nth_font 
 fn div_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
-    println!("Div function");
     
     let mut config = None;
+    let mut data = Vec::new(); 
     if is_keyword(parser_cursor, "#div(", true) {
         config = Some(gen_config_func(parser_cursor, 
                                      &[("size",     ConfigKwds::font_size, LexType::Num),
@@ -428,17 +429,41 @@ fn div_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
                                      "#div"));
         parser_cursor.next();
     }
-    else {
-        is_keyword(parser_cursor, "#div", false);
-    }
-    vec![SlideData{
-        config: config,
-        kwd: ConfigKwds::default,
-        data: ValueType::Err,
-        text_row: parser_cursor.row,
-    }]
-    //we loop through and get new slidedata from other functions and set the div_ids
+    loop{ 
+        //TODO
+        //set position and margin and width configs where appropiate
+        
+        if is_keyword(parser_cursor, "#font(", true) {
+            let mut font_data = font_func(parser_cursor);
+            loop{
+                if font_data.len() <= 0 {break;}
+                data.push(font_data.pop().unwrap());
+            }
+        }
+        else if is_keyword(parser_cursor, "#image(", true) {
+            data.push(image_func(parser_cursor));
+        }
+        else if is_keyword(parser_cursor, "#tex(", true) || 
+                is_keyword(parser_cursor, "#tex", true) {
+            data.push(tex_func(parser_cursor));
+        }
+        else if is_keyword(parser_cursor, "#head", true) {
+            data.push(header_func(parser_cursor));
+        }
+        else {
+            let text_row = parser_cursor.row;
+            data.push( SlideData{ config: config.clone(),
+                                     kwd: ConfigKwds::text,
+                                     data: gather_value(parser_cursor, LexType::SlideStr, Some(LexType::Braced)),
+                                     text_row: text_row }); 
+        }
+    
+        if parser_cursor.next() == Some('}') { break; }
+        if parser_cursor.next() == None { break; }
+    } 
+    return data;
 }
+
 
 fn slide_config(parser_cursor: &mut ParserCursor)->ConfigCard{
     gen_config_func(parser_cursor, &[("background_color", ConfigKwds::slide_background_color, LexType::Arr),
@@ -496,8 +521,7 @@ fn slide_func(parser_cursor: &mut ParserCursor)->Card{
             else if is_keyword(parser_cursor, "#head", true) {
                 card.slide_data.push(header_func(parser_cursor));
             }
-            else if is_keyword(parser_cursor, "#div(", true) || 
-                    is_keyword(parser_cursor, "#div", true) {
+            else if is_keyword(parser_cursor, "#div(", true){
                 let mut div_data = div_func(parser_cursor);
                 loop{
                     if div_data.len() <= 0 {break;}
@@ -541,8 +565,7 @@ fn return_slide_data(parser_cursor: &mut ParserCursor )->Vec<SlideData>{
     else if is_keyword(parser_cursor, "#head", true) {
         slide_data_vec.push(header_func(parser_cursor));
     }
-    else if is_keyword(parser_cursor, "#div(", true) || 
-            is_keyword(parser_cursor, "#div", true) {
+    else if is_keyword(parser_cursor, "#div(", true) {
         let mut div_data = div_func(parser_cursor);
         loop{
             if div_data.len() <= 0 {break;}
@@ -671,6 +694,7 @@ fn gather_value(parser_cursor: &mut ParserCursor, expected_type: LexType, arr_ty
                         if p == '#' { break; }
                         if p == '}' { break; }
                     } else {break;}
+                    //println!("New line continued {:?}", parser_cursor.peek());
                     if parser_cursor.next() == None { break; } //Redunent?
                     continue; 
                 }

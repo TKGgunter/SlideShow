@@ -344,6 +344,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
     let mut delta_horizontal_mm_multiples = 0;
     let mut prev_row = 0;
     let mut temp_text_margin = text_margin.clone();
+    let mut temp_braced = None;
     for  i in 0..slide_card.slide_data.len(){
         let mut temp_cursor = None;
         if i == 0 {
@@ -355,7 +356,6 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                 if temp_string == "".to_string(){}
                 else{
 
-                    //TODO:: NASTY
                     let mut temp_font_size = font_size * 1.0;
                     let mut temp_font_color = font_color.clone();
                     let mut temp_text_align = text_align.clone();
@@ -416,9 +416,9 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                             print!("Error: Unknown alignment {}", temp_align);
                                         }
                                     },
-                                    //ConfigKwds::font_braced=>{
-                                    //    temp_font_nth_line = Some( match_value_f32data(&0.0, &iter_config.data));
-                                    //}
+                                    ConfigKwds::font_braced=>{
+                                        temp_braced = Some( match_value_f32data(&0.0, &iter_config.data));
+                                    }
                                     NOT_HANDLED =>{
                                         println!("What ever you want we don't do! {:?}", NOT_HANDLED);
                                     }
@@ -436,12 +436,29 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
 
                     let margin = temp_text_margin;
                     let mut margin_vertical_lines = 1;
+                    if vec_text_and_properties.last().is_some() { 
+                        margin_vertical_lines = vec_text_and_properties.last().unwrap().delta_vertical_lines;
+                    }
+
+
+
 
                     //NOTE
-                    //Word wrap by splitting on words
+                    //This splits a line of text into works and word wraps excess.
+                    //
                     if delta_horizontal_mm > margin && temp_string.contains(" "){
                         delta_horizontal_mm -= current_text_width;
                         delta_horizontal_mm_multiples -= 1;
+
+                        
+
+                        if slide_card.slide_data.len() > i+1{
+                            if (slide_card.slide_data[i+1].text_row - slide_card.slide_data[i].text_row) > 1 { 
+                                margin_vertical_lines += 1;
+
+                            }
+                        }
+
                         for word in temp_string.split_whitespace(){
 
                             let word_space = word.to_string() + " ";
@@ -490,48 +507,46 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                             delta_horizontal_mm_multiples = 0;
                         }
                     }
+
                     else{
+                        let delta_vertical_lines = if counter_delta_horizontal == 0 { 1 } 
+                                                   else {vec_text_and_properties[counter_delta_horizontal-1].delta_vertical_lines + 1};
+
                         vec_text_and_properties.push(
                             TextAndProperties{ 
                                 align: temp_text_align.clone(),
                                 valign: text_valign.clone(),
                                 size: temp_font_size,
                                 color:temp_font_color,
-                                delta_horizontal_mm: 0.0,
-                                delta_vertical_lines: 0,
+                                delta_horizontal_mm: delta_horizontal_mm,
+                                delta_vertical_lines: delta_vertical_lines,
                                 cursor: temp_cursor.clone(),
                                 text: temp_string
                             });
 
-                        if i+1 < slide_card.slide_data.len(){ 
-                            if (slide_card.slide_data[i+1].text_row - slide_card.slide_data[i].text_row) > 1 {
-                                let offset = counter_delta_horizontal;
-                                let delta_vertical_lines = if offset == 0 { vec_text_and_properties[0].delta_vertical_lines+1} 
-                                                           else {vec_text_and_properties[offset-1].delta_vertical_lines + 1};
+                        if slide_card.slide_data.len() > i+1{
+                            if (slide_card.slide_data[i+1].text_row - slide_card.slide_data[i].text_row) > 1 { 
 
-                                for i in 0..delta_horizontal_mm_multiples {
+                                let offset = counter_delta_horizontal;
+                                for _i in 0..delta_horizontal_mm_multiples {
                                     counter_delta_horizontal += 1;
-                                    vec_text_and_properties[offset + i].delta_horizontal_mm = delta_horizontal_mm;
-                                    vec_text_and_properties[offset + i].delta_vertical_lines = delta_vertical_lines;
+                                    vec_text_and_properties[offset + _i].delta_horizontal_mm = delta_horizontal_mm;
+                                    vec_text_and_properties[offset + _i].delta_vertical_lines = delta_vertical_lines;
                                 }
                                 delta_horizontal_mm_multiples = 0;
                                 delta_horizontal_mm = 0.0;
                                 delta_row += 1;
+                                //println!("ASDF {}", vec_text_and_properties[offset].text);
                             }
                         }
-                        if (slide_card.slide_data[i].text_row - prev_row) > 1 {
-                            let offset = counter_delta_horizontal;
-                            let delta_vertical_lines = if offset == 0 { vec_text_and_properties[0].delta_vertical_lines+1}
-                                                       else {vec_text_and_properties[offset-1].delta_vertical_lines + 1};
+                        //if (slide_card.slide_data[i-1].text_row - slide_card.slide_data[i].text_row) != 0 { 
 
-                            for i in 0..delta_horizontal_mm_multiples {
-                                counter_delta_horizontal += 1;
-                                vec_text_and_properties[offset + i].delta_horizontal_mm = delta_horizontal_mm;
-                                vec_text_and_properties[offset + i].delta_vertical_lines = delta_vertical_lines;
-                            }
-                            delta_horizontal_mm_multiples = 0;
-                            delta_horizontal_mm = 0.0;
-                        }
+                        //}
+
+
+
+
+
 
 
                     }
@@ -585,7 +600,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
         } 
 
 
-        //println!("ASDF {:?} {:?} {} {:?}", iter.text, iter.align, iter.delta_horizontal_mm, text_position);
+        //println!("TextAndProp {:?} {:?}", iter, text_position);
         let font = HpdfFont::get_font_handle(&pdf, font_name);
         text_position = page.render_text( &iter.text, &iter.size, &font, &iter.color, &text_position);
     }
