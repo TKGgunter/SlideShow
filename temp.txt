@@ -28,8 +28,8 @@ align="center",
 //
 //Step two render that shit and #newline
 //sqash a lot of bugs
-//
-//
+
+
 //#slide
 //HAHA #font(size=42){ LOL} Killa
 //
@@ -47,32 +47,38 @@ align="center",
 //
 //Does this work? #newline
 //Maybe not!
+//
+//#slide
+//I don't like shit and I don't go outside!
+//SOMETHING
+//
+//
+//#slide
+//I don't like shit and I don't go outside! #newline
+//Word wrap test... Got to be so longs
+//
+//#slide
+//#font(position=[0.05, 0.9], size=0.15, align="left")Chicken Soup #newline
+//
+//I don't like shit and I don't go outside!#newline
+//I don't like shit and I don't go outside!
+//
+//#slide
+//#font(position=[0.05, 0.9], align="left"){
+//dsgjsdfkg
+//sdflkgsjdfg #newline
+//jfalksdfj
+//asdfas
+//
+//#newline
+//sadfasf
+//sdfasfd
+//}
+//
+//SDFASDFASDFASDfSDFASF
+
 
 #slide
-I don't like shit and I don't go outside!
-SOMETHING
-
-
+SDF #font(color=[1.0, 0.0, 0.0]){ ASDFASDF} SDFASDF
 #slide
-I don't like shit and I don't go outside! #newline
-Word wrap test... Got to be so longs
-
-#slide
-#font(position=[0.05, 0.9], size=0.15, align="left")Chicken Soup #newline
-
-I don't like shit and I don't go outside!#newline
-I don't like shit and I don't go outside!
-
-#slide
-#font(position=[0.05, 0.9], align="left"){
-dsgjsdfkg
-sdflkgsjdfg #newline
-jfalksdfj
-asdfas
-
-#newline
-sadfasf
-sdfasfd
-}
-
-SDFASDFASDFASDfSDFASF
+SDF  ASDFASDF SDFASDF

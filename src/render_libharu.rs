@@ -509,6 +509,9 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                     }
 
                     else{
+                        //FIXME
+                        //Do proper alignment when non position font properties change
+                        //
                         let delta_vertical_lines = if counter_delta_horizontal == 0 { 1 } 
                                                    else {vec_text_and_properties[counter_delta_horizontal-1].delta_vertical_lines + 1};
 
@@ -524,7 +527,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                 text: temp_string
                             });
 
-                        if slide_card.slide_data.len() > i+1{
+                        if slide_card.slide_data.len() > i+1 {
                             if (slide_card.slide_data[i+1].text_row - slide_card.slide_data[i].text_row) > 1 { 
 
                                 let offset = counter_delta_horizontal;
@@ -539,9 +542,14 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                 //println!("ASDF {}", vec_text_and_properties[offset].text);
                             }
                         }
-                        //if (slide_card.slide_data[i-1].text_row - slide_card.slide_data[i].text_row) != 0 { 
-
-                        //}
+                        else if slide_card.slide_data.len() == i+1{
+                            let offset = counter_delta_horizontal;
+                            for _i in 0..delta_horizontal_mm_multiples {
+                                counter_delta_horizontal += 1;
+                                vec_text_and_properties[offset + _i].delta_horizontal_mm = delta_horizontal_mm;
+                                vec_text_and_properties[offset + _i].delta_vertical_lines = delta_vertical_lines;
+                            }
+                        }
 
 
 
@@ -597,10 +605,10 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
             prev_line = iter.delta_vertical_lines;
 
             text_position[1] -= iter.delta_vertical_lines as f32 * iter.size;
-        } 
+        }
 
 
-        //println!("TextAndProp {:?} {:?}", iter, text_position);
+        //println!("{:?} {:?}", text_position, iter);
         let font = HpdfFont::get_font_handle(&pdf, font_name);
         text_position = page.render_text( &iter.text, &iter.size, &font, &iter.color, &text_position);
     }
