@@ -162,6 +162,8 @@ pub enum ConfigKwds{
 
     div,
     div_background_color,
+    div_x,
+    div_y,
     div_width,
     div_height,
     div_position,
@@ -421,13 +423,18 @@ fn div_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
     if is_keyword(parser_cursor, "#div(", true) {
         config = Some(gen_config_func(parser_cursor, 
                                      &[("size",     ConfigKwds::font_size, LexType::Num),
-                                     ("position", ConfigKwds::div_position, LexType::Arr),
-                                     ("background_color",    ConfigKwds::div_background_color, LexType::Arr),
+                                     ("pos_x", ConfigKwds::div_x, LexType::Num),
+                                     ("pos_y", ConfigKwds::div_y, LexType::Num),
                                      ("height",   ConfigKwds::div_height, LexType::Num),
                                      ("width",   ConfigKwds::div_width, LexType::Num),
+                                     ("position", ConfigKwds::div_position, LexType::Arr),
+                                     ("background_color",    ConfigKwds::div_background_color, LexType::Arr),
                                      ],
                                      "#div"));
-        parser_cursor.next();
+        
+        if parser_cursor.next() != Some('{'){
+            return data;
+        }
     }
     loop{ 
         //TODO
@@ -458,9 +465,22 @@ fn div_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
                                      text_row: text_row }); 
         }
     
-        if parser_cursor.next() == Some('}') { break; }
-        if parser_cursor.next() == None { break; }
+        match parser_cursor.next(){
+            Some('}') =>  break,
+            None => break,
+            Some(_)=>{}
+        }
     } 
+    for it in data.iter_mut(){
+        let mut temp_config = config.clone().unwrap();
+        if it.config.is_some(){
+            let mut ref_config = it.config.as_mut().unwrap();
+            ref_config.config_data.append(&mut temp_config.config_data);
+        }
+        else{
+            it.config = config.clone();
+        }
+    }
     return data;
 }
 
@@ -862,20 +882,13 @@ No need for a bracketted structure.
 We can create a paragraph with consecutive \\n\\n.
 We can create a new line with #newline
 
+#slide
+#div(width=0.5, pos_x=0.1){
+ASDFTHOM
+#font(color=[1,0,0]) Birds
 
-#slide(background_color= [150,0,150])
-  We can also change slide configurations for specific slides.
-#font(size=42) We can do different sized text #font(color=[200,50,50]) Diff font color
-
-#font(family=\"Times\", size=32, style=\"bold\", position=[0.2, 0.2]) We can place text.
-
-//#slide
-//#image(path=\"some_that_doesnt_exist.img\", position=[0.6,0.6])
-//
-//#font(margin=0.5){
-//Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-//}
-//
+Yup
+}
 "
 );
 

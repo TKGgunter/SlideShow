@@ -30,24 +30,24 @@ align="center",
 //sqash a lot of bugs
 
 
-//#slide
-//HAHA #font(size=42){ LOL} Killa
-//
-//#font(position= [0.2, 0.2]) SDFASDF
-//
-//
-//#slide(text_position= [0.5, 0.8], text_margin= 0.8)
-//I don't like shit and I don't go outside! 
-//I don't like shit and I don't go outside!
-//
-//
-//#slide
-//#font(position=[0.05, 0.9], size=0.15, align="left")Chicken Soup
-//
-//
-//Does this work? #newline
-//Maybe not!
-//
+#slide
+HAHA #font(size=42){ LOL} Killa
+
+#font(position= [0.2, 0.2]) SDFASDF
+
+
+#slide(text_position= [0.5, 0.8], text_margin= 0.8)
+I don't like shit and I don't go outside! 
+I don't like shit and I don't go outside!
+
+
+#slide
+#font(position=[0.05, 0.9], size=0.15, align="left")Chicken Soup
+
+
+Does this work? #newline
+Maybe not!
+
 //#slide
 //I don't like shit and I don't go outside!
 //SOMETHING
@@ -63,19 +63,19 @@ align="center",
 //I don't like shit and I don't go outside!#newline
 //I don't like shit and I don't go outside!
 //
-//#slide
-//#font(position=[0.05, 0.9], align="left"){
-//dsgjsdfkg
-//sdflkgsjdfg #newline
-//jfalksdfj
-//asdfas
-//
-//#newline
-//sadfasf
-//sdfasfd
-//}
-//
-//SDFASDFASDFASDfSDFASF
+#slide
+#font(position=[0.05, 0.9], align="left"){
+dsgjsdfkg
+sdflkgsjdfg #newline
+jfalksdfj
+asdfas
+
+#newline
+sadfasf
+sdfasfd
+}
+
+SDFASDFASDFASDfSDFASF
 
 
 #slide
