@@ -12,7 +12,7 @@ sudo apt-get install dvipng
 
 
 TODO:
-+Test font and default text stuff to make sure it all works
-+Test div parsing
-+Hookup div to renderer
++Fix div
+  + div properties seem to be over written
+
 

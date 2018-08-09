@@ -167,6 +167,7 @@ pub enum ConfigKwds{
     div_width,
     div_height,
     div_position,
+    div_align,
     div_nth,
 
     font,
@@ -428,6 +429,7 @@ fn div_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
                                      ("height",   ConfigKwds::div_height, LexType::Num),
                                      ("width",   ConfigKwds::div_width, LexType::Num),
                                      ("position", ConfigKwds::div_position, LexType::Arr),
+                                     ("align", ConfigKwds::div_align, LexType::Str),
                                      ("background_color",    ConfigKwds::div_background_color, LexType::Arr),
                                      ],
                                      "#div"));
@@ -437,9 +439,7 @@ fn div_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
         }
     }
     loop{ 
-        //TODO
-        //set position and margin and width configs where appropiate
-        
+        parser_cursor.next(); 
         if is_keyword(parser_cursor, "#font(", true) {
             let mut font_data = font_func(parser_cursor);
             loop{
@@ -481,6 +481,7 @@ fn div_func(parser_cursor: &mut ParserCursor)->Vec<SlideData>{
             it.config = config.clone();
         }
     }
+    data.reverse();
     return data;
 }
 
@@ -889,6 +890,12 @@ ASDFTHOM
 
 Yup
 }
+
+#slide
+#left_div{
+SDFOMER #newline
+ERADOFM
+}
 "
 );
 
@@ -896,6 +903,7 @@ Yup
     slide_string = remove_comments(slide_string);
     slide_string = replace_newline(slide_string);
     slide_string = replace_bullet(slide_string);
+    slide_string = replace_divs(slide_string);
 
     let mut parser_cursor = ParserCursor::new(slide_string);
 
@@ -960,6 +968,18 @@ fn replace_newline(contents: String)->String{
 fn replace_bullet(contents: String)->String{
     let mut clean_contents = String::new();
     clean_contents = contents.replace("\n#bul ", "\n\n\u{2022} ");
+    clean_contents
+}
+
+//TODO
+//Allow left_div and right_div parameters.
+//look for () copy within () and paste that in the div command
+fn replace_divs(contents: String)->String{
+    let mut clean_contents = String::new();
+    clean_contents = contents.replace("\n#left_div{",
+                "\n#div(position=[0.05, 0.8], width=0.4, align=\"left\"){");
+    clean_contents = clean_contents.replace("\n#right_div{",
+                "\n#div(position=[0.505, 0.8], width=0.4, align=\"left\"){");
     clean_contents
 }
 

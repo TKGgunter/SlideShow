@@ -1,0 +1,75 @@
+#config(
+background_color= [0.2, 0.2, 0.2],
+font_color= [150, 150, 50],
+font_size = 0.05,
+align="center",
+)
+
+
+//BUG where #font #newline #font wrote over each other
+#slide
+#font(size=0.15, position=[0.5, 0.7]) Uprooting .root 
+
+#font(size=0.05, align="left", position=[0.7, 0.5])Thoth Gunter
+
+
+//BUG centering does not look right
+//BUG additional newlines after the first are not being rendered
+#slide
+Waging war against ROOT!
+
+#slide
+Waging war against ROOT! #newline #newline
+#font( color= [0, 1, 0], position=[0.2,0.9]) CMSSW
+
+
+#font( color= [1, 0, 0], position=[0.7,0.45]) Ntuplizer / Data storage
+
+//BUG lost character when } is right next to the last char
+#slide
+I don't want a root dependancy when  #newline
+I #font(color=[1, 0, 0]){ only } need a data storage format!
+
+
+//BUG div right left bugs again
+//BUG with number of extra lines that are carried over when we change cursors
+#slide
+#font(position=[0.15, 0.6], align="left"){
+I currently: #newline
+.root -> .hdf5
+}
+
+
+#font(position=[0.6, 0.7], align="left"){
+Others : #newline
+.root -> .cvs
+}
+
+#slide
+Why not go all the way?!
+
+//BUG when apply text_position and align we don't get newlines
+#slide
+ROOT:
+
++ dynamic format (add and remove feature 
+
+without versioning conserns)
+
++ small disk foot print
+
+
+//BUG centering fucks up when we do an inline font
+#slide
+Can we do this?
+
++ dynamic format #font(color=[0,1,0]){ EASY }  
+
++ small disk foot print #font(color=[0,1,0]){ YES WITH MINIZ }
+
+
+#slide
+Outline file format spec
+
+
+But isn't serization hard

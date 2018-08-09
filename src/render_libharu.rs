@@ -333,6 +333,8 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
         delta_horizontal_mm: f32,
         delta_vertical_lines: u32,
         cursor: Option<[f32;2]>,
+        pos_x: Option<f32>,
+        pos_y: Option<f32>,
         text: String,
         //font
         //style
@@ -359,6 +361,8 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                     let mut temp_font_size = font_size * 1.0;
                     let mut temp_font_color = font_color.clone();
                     let mut temp_text_align = text_align.clone();
+                    let mut temp_pos_x : Option<f32> = None;
+                    let mut temp_pos_y : Option<f32> = None;
                     match slide_card.slide_data[i].config{
                         Some(ref config) => { 
 
@@ -419,6 +423,52 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                     ConfigKwds::font_braced=>{
                                         temp_braced = Some( match_value_f32data(&0.0, &iter_config.data));
                                     }
+                                    ConfigKwds::div_align=>{
+                                        let temp_align = match_value_strdata("", &iter_config.data).to_lowercase();
+                                        if temp_align == "left"{
+                                            temp_text_align = Alignment::Left;
+                                        }
+                                        else if temp_align == "right"{
+                                            temp_text_align = Alignment::Right;
+                                        }
+                                        else if temp_align == "center"{
+                                            temp_text_align = Alignment::Center;
+                                        }
+                                        else {
+                                            print!("Error: Unknown alignment {}", temp_align);
+                                        }
+                                    },
+                                    ConfigKwds::div_x=>{
+                                        let mut _pos_x = 0.0;
+                                        _pos_x = match_value_f32data(&_pos_x, &iter_config.data);
+                                        if _pos_x <= 1.0{
+                                            _pos_x *= slide_width;
+                                        }
+                                        temp_pos_x = Some(_pos_x);
+                                    },
+                                    ConfigKwds::div_position=>{
+                                        let mut _cursor = [0.0f32; 2];
+                                        match_value_arrf32data(&mut _cursor, &iter_config.data);
+                                        if _cursor[0] < 1.0 {
+                                            _cursor[0] *= slide_width;
+                                        }
+                                        if _cursor[1] < 1.0 {
+                                             _cursor[1] *= slide_height;
+                                        }
+                                        temp_cursor = Some(_cursor);
+                                    },
+                                    ConfigKwds::div_width=>{
+                                        let mut _div_margin = match_value_f32data(&text_margin, &iter_config.data);
+                                        if _div_margin <= 1.0{
+                                            _div_margin *= slide_width;
+                                        }
+
+                                        //NOTE
+                                        //This may not work properly...  I don't remember how
+                                        //temp_text_margin works
+                                        //Aug 5, 2018
+                                        temp_text_margin = _div_margin;
+                                    },
                                     NOT_HANDLED =>{
                                         println!("What ever you want we don't do! {:?}", NOT_HANDLED);
                                     }
@@ -430,32 +480,35 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                         _=>{}
                     }
 
-                    let current_text_width = calc_text_width( &pdf, &page, &temp_string, font_name, &temp_font_size);
-                    delta_horizontal_mm += current_text_width;
-                    delta_horizontal_mm_multiples += 1;
 
                     let margin = temp_text_margin;
-                    let mut margin_vertical_lines = 1;
+                    let mut margin_vertical_lines = 0;
                     if vec_text_and_properties.last().is_some() { 
                         margin_vertical_lines = vec_text_and_properties.last().unwrap().delta_vertical_lines;
                     }
 
-
-
-
                     //NOTE
+                    //I'm not sure how much of a real fix this is.
+                    if temp_cursor.is_some(){
+                        margin_vertical_lines = 0;
+                        delta_horizontal_mm_multiples = 0;
+                        delta_horizontal_mm = 0.0;
+                    }
+
+                    let current_text_width = calc_text_width( &pdf, &page, &temp_string, font_name, &temp_font_size);
+                    delta_horizontal_mm += current_text_width;
+                    delta_horizontal_mm_multiples += 1;
+
+                    //NOTE  CLEANUP 
                     //This splits a line of text into works and word wraps excess.
-                    //
                     if delta_horizontal_mm > margin && temp_string.contains(" "){
                         delta_horizontal_mm -= current_text_width;
                         delta_horizontal_mm_multiples -= 1;
-
                         
 
                         if slide_card.slide_data.len() > i+1{
                             if (slide_card.slide_data[i+1].text_row - slide_card.slide_data[i].text_row) > 1 { 
                                 margin_vertical_lines += 1;
-
                             }
                         }
 
@@ -473,8 +526,11 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                     delta_horizontal_mm: 0.0,
                                     delta_vertical_lines: margin_vertical_lines.clone(),
                                     cursor: temp_cursor.clone(),
+                                    pos_x: temp_pos_x,
+                                    pos_y: temp_pos_y,
                                     text: word_space.clone(),
                                 });
+
 
                             if delta_horizontal_mm > margin{
 
@@ -488,9 +544,11 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                 delta_horizontal_mm_multiples = 0;
                                 delta_row += 1;
 
-                                delta_horizontal_mm = 0.0;
-                                let offset = vec_text_and_properties.len();
+                                delta_horizontal_mm =  calc_text_width( &pdf, &page, &word_space, font_name, &temp_font_size);//0.0;
                                 margin_vertical_lines += 1;
+                                let _index = vec_text_and_properties.len() - 1;
+                                vec_text_and_properties[ _index ].delta_horizontal_mm = 0.0;
+                                vec_text_and_properties[ _index ].delta_vertical_lines += 1;
                             }
                             else{
                                 delta_horizontal_mm_multiples += 1;
@@ -511,7 +569,6 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                     else{
                         //FIXME
                         //Do proper alignment when non position font properties change
-                        //
                         let delta_vertical_lines = if counter_delta_horizontal == 0 { 1 } 
                                                    else {vec_text_and_properties[counter_delta_horizontal-1].delta_vertical_lines + 1};
 
@@ -524,6 +581,8 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                 delta_horizontal_mm: delta_horizontal_mm,
                                 delta_vertical_lines: delta_vertical_lines,
                                 cursor: temp_cursor.clone(),
+                                pos_x: temp_pos_x,
+                                pos_y: temp_pos_y,
                                 text: temp_string
                             });
 
@@ -539,7 +598,6 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                 delta_horizontal_mm_multiples = 0;
                                 delta_horizontal_mm = 0.0;
                                 delta_row += 1;
-                                //println!("ASDF {}", vec_text_and_properties[offset].text);
                             }
                         }
                         else if slide_card.slide_data.len() == i+1{
@@ -550,9 +608,6 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
                                 vec_text_and_properties[offset + _i].delta_vertical_lines = delta_vertical_lines;
                             }
                         }
-
-
-
 
 
 
@@ -586,7 +641,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
     //Alignment is wrong when word wrapping
     //Test right align
     //Text Bottom align
-    let mut prev_line = 0;
+    let mut prev_line = 999;
     let mut text_position = cursor.clone();
     for iter in vec_text_and_properties.iter(){
         if prev_line != iter.delta_vertical_lines{
@@ -608,7 +663,7 @@ pub fn make_slide<'a>( document_settings: &DocumentSettings<'a>, slide_card: &Sl
         }
 
 
-        //println!("{:?} {:?}", text_position, iter);
+        //println!("{:?} {:?} {:?} {:?}", text_position, iter.text, iter.delta_horizontal_mm, iter.align);
         let font = HpdfFont::get_font_handle(&pdf, font_name);
         text_position = page.render_text( &iter.text, &iter.size, &font, &iter.color, &text_position);
     }
